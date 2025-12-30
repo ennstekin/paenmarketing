@@ -15,7 +15,13 @@ import {
 import { ArrowUpDown, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { ChannelIcon } from '@/components/features/marketing-item/channel-icon'
 import { ItemFormDialog } from '@/components/features/marketing-item/item-form-dialog'
@@ -193,31 +199,39 @@ export function DataTable() {
           />
           <Select
             value={(table.getColumn('channel')?.getFilterValue() as string) ?? 'all'}
-            onChange={(e) =>
-              table.getColumn('channel')?.setFilterValue(e.target.value)
+            onValueChange={(value) =>
+              table.getColumn('channel')?.setFilterValue(value === 'all' ? undefined : value)
             }
-            className="max-w-[150px]"
           >
-            <option value="all">Tüm Kanallar</option>
-            {Object.entries(channelLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Tüm Kanallar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Kanallar</SelectItem>
+              {Object.entries(channelLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           <Select
             value={(table.getColumn('status')?.getFilterValue() as string) ?? 'all'}
-            onChange={(e) =>
-              table.getColumn('status')?.setFilterValue(e.target.value)
+            onValueChange={(value) =>
+              table.getColumn('status')?.setFilterValue(value === 'all' ? undefined : value)
             }
-            className="max-w-[150px]"
           >
-            <option value="all">Tüm Durumlar</option>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Tüm Durumlar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
 

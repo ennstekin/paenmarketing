@@ -13,6 +13,9 @@ import {
   LogOut,
   Menu,
   X,
+  Users,
+  Shield,
+  Activity,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -22,6 +25,9 @@ const navItems = [
   { href: '/calendar', label: 'Takvim', icon: Calendar },
   { href: '/kanban', label: 'Kanban', icon: Kanban },
   { href: '/list', label: 'Liste', icon: List },
+  { href: '/users', label: 'Kullanıcılar', icon: Users },
+  { href: '/permissions', label: 'İzinler', icon: Shield },
+  { href: '/logs', label: 'Loglar', icon: Activity },
   { href: '/settings', label: 'Ayarlar', icon: Settings },
 ]
 

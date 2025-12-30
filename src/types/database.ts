@@ -8,6 +8,7 @@ export type Json =
 
 export type ChannelType = 'email' | 'sms' | 'meta_ads' | 'instagram'
 export type ItemStatus = 'planned' | 'in_progress' | 'completed'
+export type UserRole = 'admin' | 'editor' | 'viewer'
 
 export interface Database {
   public: {
@@ -18,6 +19,9 @@ export interface Database {
           email: string
           full_name: string | null
           avatar_url: string | null
+          role: UserRole
+          is_active: boolean
+          last_login_at: string | null
           created_at: string
           updated_at: string
         }
@@ -26,6 +30,9 @@ export interface Database {
           email: string
           full_name?: string | null
           avatar_url?: string | null
+          role?: UserRole
+          is_active?: boolean
+          last_login_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -34,8 +41,75 @@ export interface Database {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
+          role?: UserRole
+          is_active?: boolean
+          last_login_at?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      activity_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          action: string
+          entity_type: string | null
+          entity_id: string | null
+          description: string | null
+          metadata: Json
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          action: string
+          entity_type?: string | null
+          entity_id?: string | null
+          description?: string | null
+          metadata?: Json
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          action?: string
+          entity_type?: string | null
+          entity_id?: string | null
+          description?: string | null
+          metadata?: Json
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+      }
+      permissions: {
+        Row: {
+          id: string
+          role: UserRole
+          resource: string
+          action: string
+          allowed: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          role: UserRole
+          resource: string
+          action: string
+          allowed?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          role?: UserRole
+          resource?: string
+          action?: string
+          allowed?: boolean
+          created_at?: string
         }
       }
       marketing_items: {
@@ -179,3 +253,5 @@ export type MarketingItem = Tables<'marketing_items'>
 export type Profile = Tables<'profiles'>
 export type Attachment = Tables<'attachments'>
 export type Tag = Tables<'tags'>
+export type ActivityLog = Tables<'activity_logs'>
+export type Permission = Tables<'permissions'>
