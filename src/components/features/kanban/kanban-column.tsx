@@ -7,6 +7,7 @@ import {
 } from '@dnd-kit/sortable'
 import { KanbanCard } from './kanban-card'
 import { statusColors } from '@/lib/utils'
+import { Clock, Loader2, CheckCircle2, Inbox } from 'lucide-react'
 import type { MarketingItem, ItemStatus } from '@/types/database'
 
 interface KanbanColumnProps {
@@ -15,6 +16,12 @@ interface KanbanColumnProps {
   items: MarketingItem[]
   onEditItem: (item: MarketingItem) => void
   onDeleteItem: (id: string) => void
+}
+
+const statusIcons: Record<ItemStatus, React.ReactNode> = {
+  planned: <Clock className="h-4 w-4" />,
+  in_progress: <Loader2 className="h-4 w-4" />,
+  completed: <CheckCircle2 className="h-4 w-4" />,
 }
 
 export function KanbanColumn({
@@ -28,20 +35,33 @@ export function KanbanColumn({
 
   return (
     <div className="flex flex-col w-80 min-w-[320px]">
-      <div className="flex items-center gap-2 mb-4">
+      {/* Column Header */}
+      <div
+        className="flex items-center gap-3 mb-4 px-1"
+        style={{ color: statusColors[id] }}
+      >
         <div
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: statusColors[id] }}
-        />
+          className="p-1.5 rounded-lg"
+          style={{ backgroundColor: `${statusColors[id]}15` }}
+        >
+          {statusIcons[id]}
+        </div>
         <h3 className="font-semibold text-neutral-900">{title}</h3>
-        <span className="ml-auto text-sm text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+        <span
+          className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full text-white"
+          style={{ backgroundColor: statusColors[id] }}
+        >
           {items.length}
         </span>
       </div>
+
+      {/* Column Content */}
       <div
         ref={setNodeRef}
-        className={`flex-1 rounded-xl p-3 transition-colors ${
-          isOver ? 'bg-neutral-200' : 'bg-neutral-100'
+        className={`flex-1 rounded-2xl p-3 transition-all duration-200 border-2 border-dashed ${
+          isOver
+            ? 'bg-neutral-100 border-neutral-300 scale-[1.02]'
+            : 'bg-neutral-50/50 border-transparent'
         }`}
       >
         <SortableContext
@@ -58,8 +78,10 @@ export function KanbanColumn({
               />
             ))}
             {items.length === 0 && (
-              <div className="flex items-center justify-center h-[200px] text-neutral-400 text-sm">
-                İçerik yok
+              <div className="flex flex-col items-center justify-center h-[200px] text-neutral-400">
+                <Inbox className="h-10 w-10 mb-2 opacity-50" />
+                <p className="text-sm">İçerik yok</p>
+                <p className="text-xs mt-1">Buraya sürükle bırak</p>
               </div>
             )}
           </div>

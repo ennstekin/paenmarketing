@@ -8,9 +8,9 @@ export default function DashboardLayout({
 }) {
   return (
     <QueryProvider>
-      <div className="min-h-screen bg-neutral-50">
+      <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
         <Sidebar />
-        <main className="lg:ml-64">{children}</main>
+        <main className="lg:ml-72 min-h-screen">{children}</main>
       </div>
     </QueryProvider>
   )

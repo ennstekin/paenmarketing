@@ -1,25 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #fafafa;
   --foreground: #171717;
+  --primary: #171717;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --border: #e5e5e5;
+  --ring: #171717;
+  --radius: 0.75rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* FullCalendar Overrides */
+/* FullCalendar Premium Styling */
 .fc {
   --fc-border-color: #e5e5e5;
   --fc-button-bg-color: #171717;
   --fc-button-border-color: #171717;
   --fc-button-hover-bg-color: #404040;
   --fc-button-hover-border-color: #404040;
-  --fc-button-active-bg-color: #171717;
-  --fc-today-bg-color: #fafafa;
+  --fc-button-active-bg-color: #262626;
+  --fc-button-active-border-color: #262626;
+  --fc-today-bg-color: #f0fdf4;
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: #fafafa;
+  --fc-list-event-hover-bg-color: #f5f5f5;
 }
 
 .fc .fc-button {
@@ -27,27 +46,119 @@ body {
   font-size: 0.875rem;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.fc .fc-button:focus {
+  box-shadow: 0 0 0 2px rgba(23, 23, 23, 0.2);
+}
+
+.fc .fc-button-group .fc-button {
+  border-radius: 0;
+}
+
+.fc .fc-button-group .fc-button:first-child {
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.fc .fc-button-group .fc-button:last-child {
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.fc .fc-toolbar {
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .fc .fc-toolbar-title {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #171717;
+}
+
+.fc .fc-daygrid-day {
+  transition: background-color 0.2s ease;
+}
+
+.fc .fc-daygrid-day:hover {
+  background-color: #fafafa;
 }
 
 .fc .fc-daygrid-day-number {
   font-size: 0.875rem;
+  font-weight: 500;
   color: #525252;
+  padding: 0.5rem;
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  background: #171717;
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fc .fc-col-header-cell {
+  background: #fafafa;
+  border-bottom: 2px solid #e5e5e5 !important;
 }
 
 .fc .fc-col-header-cell-cushion {
-  font-weight: 500;
+  font-weight: 600;
   color: #525252;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 0;
 }
 
 .fc-event {
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.75rem;
   cursor: pointer;
+  border: none !important;
+  padding: 2px 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fc-event .fc-event-main {
+  padding: 2px 4px;
+}
+
+.fc .fc-daygrid-event-dot {
+  display: none;
+}
+
+.fc .fc-daygrid-block-event .fc-event-time {
+  font-weight: 600;
+}
+
+.fc-h-event {
+  background: linear-gradient(135deg, var(--fc-event-bg-color), var(--fc-event-bg-color));
+}
+
+.fc .fc-scrollgrid {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #e5e5e5 !important;
+}
+
+.fc .fc-scrollgrid td:last-of-type {
+  border-right: none !important;
+}
+
+.fc .fc-scrollgrid-section-header td {
+  border-bottom: none !important;
 }
 
 /* Scrollbar Styles */
