@@ -6,6 +6,14 @@ import type { Channel, Database } from '@/types/database'
 
 type ChannelInsert = Database['public']['Tables']['channels']['Insert']
 
+// Default channels when database is empty
+const DEFAULT_CHANNELS: Channel[] = [
+  { id: 'default-email', name: 'email', label: 'E-posta', color: '#3b82f6', icon: 'mail', is_active: true, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'default-sms', name: 'sms', label: 'SMS', color: '#22c55e', icon: 'message-square', is_active: true, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'default-meta', name: 'meta_ads', label: 'Meta Ads', color: '#8b5cf6', icon: 'megaphone', is_active: true, sort_order: 2, created_at: '', updated_at: '' },
+  { id: 'default-instagram', name: 'instagram', label: 'Instagram', color: '#ec4899', icon: 'instagram', is_active: true, sort_order: 3, created_at: '', updated_at: '' },
+]
+
 export function useChannels() {
   const supabase = createClient()
 
@@ -20,6 +28,10 @@ export function useChannels() {
         .order('sort_order', { ascending: true })
 
       if (error) throw error
+      // Return default channels if database is empty
+      if (!data || data.length === 0) {
+        return DEFAULT_CHANNELS
+      }
       return data as Channel[]
     },
   })
@@ -38,6 +50,10 @@ export function useAllChannels() {
         .order('sort_order', { ascending: true })
 
       if (error) throw error
+      // Return default channels if database is empty
+      if (!data || data.length === 0) {
+        return DEFAULT_CHANNELS
+      }
       return data as Channel[]
     },
   })
