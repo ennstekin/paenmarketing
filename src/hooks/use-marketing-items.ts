@@ -1,0 +1,202 @@
+'use client'
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { createClient } from '@/lib/supabase/client'
+import type { MarketingItem, ChannelType, ItemStatus } from '@/types/database'
+
+type CreateItemInput = {
+  title: string
+  description?: string | null
+  channel: ChannelType
+  status?: ItemStatus
+  scheduled_date?: string | null
+  scheduled_time?: string | null
+  notes?: string | null
+  target_audience?: string | null
+  budget?: number | null
+}
+
+type UpdateItemInput = {
+  id: string
+  title?: string
+  description?: string | null
+  channel?: ChannelType
+  status?: ItemStatus
+  scheduled_date?: string | null
+  scheduled_time?: string | null
+  notes?: string | null
+  target_audience?: string | null
+  budget?: number | null
+}
+
+export function useMarketingItems() {
+  const supabase = createClient()
+
+  return useQuery({
+    queryKey: ['marketing-items'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .select('*')
+        .order('scheduled_date', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data as MarketingItem[]
+    },
+  })
+}
+
+export function useMarketingItemsByStatus(status: ItemStatus) {
+  const supabase = createClient()
+
+  return useQuery({
+    queryKey: ['marketing-items', status],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .select('*')
+        .eq('status', status)
+        .order('scheduled_date', { ascending: true })
+
+      if (error) throw error
+      return data as MarketingItem[]
+    },
+  })
+}
+
+export function useMarketingItemsByChannel(channel: ChannelType) {
+  const supabase = createClient()
+
+  return useQuery({
+    queryKey: ['marketing-items', 'channel', channel],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .select('*')
+        .eq('channel', channel)
+        .order('scheduled_date', { ascending: true })
+
+      if (error) throw error
+      return data as MarketingItem[]
+    },
+  })
+}
+
+export function useCreateMarketingItem() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async (item: CreateItemInput) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .insert({
+          ...item,
+          user_id: user.id,
+        } as never)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as MarketingItem
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marketing-items'] })
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
+    },
+  })
+}
+
+export function useUpdateMarketingItem() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: UpdateItemInput) => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .update(updates as never)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as MarketingItem
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marketing-items'] })
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
+    },
+  })
+}
+
+export function useDeleteMarketingItem() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('marketing_items')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marketing-items'] })
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
+    },
+  })
+}
+
+export function useStats() {
+  const supabase = createClient()
+
+  return useQuery({
+    queryKey: ['stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .select('channel, status, scheduled_date')
+
+      if (error) throw error
+
+      const items = data as Pick<MarketingItem, 'channel' | 'status' | 'scheduled_date'>[]
+
+      const byChannel = items.reduce((acc, item) => {
+        acc[item.channel] = (acc[item.channel] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      const byStatus = items.reduce((acc, item) => {
+        acc[item.status] = (acc[item.status] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      const total = items.length
+      const completed = byStatus.completed || 0
+      const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const upcoming = items.filter((item) => {
+        if (!item.scheduled_date) return false
+        const date = new Date(item.scheduled_date)
+        return date >= today && item.status !== 'completed'
+      }).length
+
+      return {
+        total,
+        byChannel,
+        byStatus,
+        completionRate,
+        upcoming,
+      }
+    },
+  })
+}

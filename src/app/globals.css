@@ -5,22 +5,67 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* FullCalendar Overrides */
+.fc {
+  --fc-border-color: #e5e5e5;
+  --fc-button-bg-color: #171717;
+  --fc-button-border-color: #171717;
+  --fc-button-hover-bg-color: #404040;
+  --fc-button-hover-border-color: #404040;
+  --fc-button-active-bg-color: #171717;
+  --fc-today-bg-color: #fafafa;
+}
+
+.fc .fc-button {
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.fc .fc-daygrid-day-number {
+  font-size: 0.875rem;
+  color: #525252;
+}
+
+.fc .fc-col-header-cell-cushion {
+  font-weight: 500;
+  color: #525252;
+}
+
+.fc-event {
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
 }
