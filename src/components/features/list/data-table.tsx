@@ -29,11 +29,14 @@ import {
   useMarketingItems,
   useDeleteMarketingItem,
 } from '@/hooks/use-marketing-items'
-import { formatDate, channelLabels, statusLabels } from '@/lib/utils'
-import type { MarketingItem, ChannelType, ItemStatus } from '@/types/database'
+import { useChannels, useChannelHelpers } from '@/hooks/use-channels'
+import { formatDate, statusLabels } from '@/lib/utils'
+import type { MarketingItem, ItemStatus } from '@/types/database'
 
 export function DataTable() {
   const { data: items, isLoading } = useMarketingItems()
+  const { data: channels } = useChannels()
+  const { getChannelLabel, getChannelColor, getChannelIcon } = useChannelHelpers()
   const deleteItem = useDeleteMarketingItem()
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -68,11 +71,11 @@ export function DataTable() {
         accessorKey: 'channel',
         header: 'Kanal',
         cell: ({ row }) => {
-          const channel = row.getValue('channel') as ChannelType
+          const channel = row.getValue('channel') as string
           return (
             <div className="flex items-center gap-2">
-              <ChannelIcon channel={channel} />
-              <Badge variant={channel}>{channelLabels[channel]}</Badge>
+              <ChannelIcon icon={getChannelIcon(channel)} color={getChannelColor(channel)} />
+              <Badge variant="channel" color={getChannelColor(channel)}>{getChannelLabel(channel)}</Badge>
             </div>
           )
         },
@@ -139,7 +142,7 @@ export function DataTable() {
         ),
       },
     ],
-    []
+    [getChannelLabel, getChannelColor, getChannelIcon]
   )
 
   const table = useReactTable({
@@ -199,9 +202,9 @@ export function DataTable() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tüm Kanallar</SelectItem>
-              {Object.entries(channelLabels).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
+              {channels?.map((channel) => (
+                <SelectItem key={channel.name} value={channel.name}>
+                  {channel.label}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -2,10 +2,12 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Trash2, Calendar, Clock, Mail, MessageSquare, Megaphone, Instagram } from 'lucide-react'
+import { GripVertical, Trash2, Calendar, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { formatDate, channelLabels, channelColors } from '@/lib/utils'
-import type { MarketingItem, ChannelType } from '@/types/database'
+import { ChannelIcon } from '@/components/features/marketing-item/channel-icon'
+import { useChannelHelpers } from '@/hooks/use-channels'
+import { formatDate } from '@/lib/utils'
+import type { MarketingItem } from '@/types/database'
 
 interface KanbanCardProps {
   item: MarketingItem
@@ -13,14 +15,8 @@ interface KanbanCardProps {
   onDelete: (id: string) => void
 }
 
-const channelIcons: Record<ChannelType, React.ReactNode> = {
-  email: <Mail className="h-3.5 w-3.5" />,
-  sms: <MessageSquare className="h-3.5 w-3.5" />,
-  meta_ads: <Megaphone className="h-3.5 w-3.5" />,
-  instagram: <Instagram className="h-3.5 w-3.5" />,
-}
-
 export function KanbanCard({ item, onEdit, onDelete }: KanbanCardProps) {
+  const { getChannelLabel, getChannelColor, getChannelIcon } = useChannelHelpers()
   const {
     attributes,
     listeners,
@@ -58,11 +54,12 @@ export function KanbanCard({ item, onEdit, onDelete }: KanbanCardProps) {
             {/* Channel Badge */}
             <div className="mb-3">
               <Badge
-                variant={item.channel as ChannelType}
+                variant="channel"
+                color={getChannelColor(item.channel)}
                 className="inline-flex items-center gap-1.5 text-xs font-medium"
               >
-                {channelIcons[item.channel]}
-                {channelLabels[item.channel]}
+                <ChannelIcon icon={getChannelIcon(item.channel)} className="h-3.5 w-3.5" />
+                {getChannelLabel(item.channel)}
               </Badge>
             </div>
 
@@ -111,7 +108,7 @@ export function KanbanCard({ item, onEdit, onDelete }: KanbanCardProps) {
       {/* Channel Color Indicator */}
       <div
         className="absolute left-0 top-4 bottom-4 w-1 rounded-full opacity-60"
-        style={{ backgroundColor: channelColors[item.channel] }}
+        style={{ backgroundColor: getChannelColor(item.channel) }}
       />
     </div>
   )

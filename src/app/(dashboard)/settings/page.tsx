@@ -45,13 +45,26 @@ import {
   AlertCircle,
   Check,
   X,
+  Layers,
+  GripVertical,
+  MessageSquare,
+  Megaphone,
+  Instagram,
+  Send,
+  Radio,
+  Tv,
+  Globe,
+  Phone,
 } from 'lucide-react'
+import { useAllChannels, useCreateChannel, useUpdateChannel, useDeleteChannel } from '@/hooks/use-channels'
+import type { Channel } from '@/types/database'
 import { formatDistanceToNow } from 'date-fns'
 import { tr } from 'date-fns/locale'
 import type { Profile, UserRole, Permission } from '@/types/database'
 
 const tabs = [
   { id: 'profile', label: 'Profil', icon: User },
+  { id: 'channels', label: 'Kanallar', icon: Layers },
   { id: 'users', label: 'Kullanıcılar', icon: Users },
   { id: 'permissions', label: 'İzinler', icon: Shield },
   { id: 'logs', label: 'Loglar', icon: Activity },
@@ -98,7 +111,7 @@ export default function SettingsPage() {
         <div className="flex flex-wrap gap-2 mb-6 border-b border-neutral-200 pb-4">
           {tabs.map((tab) => {
             // Hide admin-only tabs for non-admins
-            if (['users', 'permissions', 'logs'].includes(tab.id) && !isAdmin) {
+            if (['users', 'permissions', 'logs', 'channels'].includes(tab.id) && !isAdmin) {
               return null
             }
             const Icon = tab.icon
@@ -121,10 +134,358 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         {activeTab === 'profile' && <ProfileTab />}
+        {activeTab === 'channels' && isAdmin && <ChannelsTab />}
         {activeTab === 'users' && isAdmin && <UsersTab />}
         {activeTab === 'permissions' && isAdmin && <PermissionsTab />}
         {activeTab === 'logs' && isAdmin && <LogsTab />}
       </div>
+    </div>
+  )
+}
+
+// Icon options for channels
+const iconOptions = [
+  { value: 'mail', label: 'Email', icon: Mail },
+  { value: 'message-square', label: 'Mesaj', icon: MessageSquare },
+  { value: 'megaphone', label: 'Megafon', icon: Megaphone },
+  { value: 'instagram', label: 'Instagram', icon: Instagram },
+  { value: 'send', label: 'Gönder', icon: Send },
+  { value: 'radio', label: 'Radyo', icon: Radio },
+  { value: 'tv', label: 'TV', icon: Tv },
+  { value: 'globe', label: 'Web', icon: Globe },
+  { value: 'phone', label: 'Telefon', icon: Phone },
+]
+
+const getIconComponent = (iconName: string) => {
+  const found = iconOptions.find(i => i.value === iconName)
+  return found ? found.icon : Mail
+}
+
+// Channels Tab
+function ChannelsTab() {
+  const { data: channels, isLoading } = useAllChannels()
+  const createChannel = useCreateChannel()
+  const updateChannel = useUpdateChannel()
+  const deleteChannel = useDeleteChannel()
+
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [editingChannel, setEditingChannel] = useState<Channel | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [formData, setFormData] = useState({
+    name: '',
+    label: '',
+    color: '#6366f1',
+    icon: 'mail',
+    is_active: true,
+    sort_order: 0,
+  })
+  const [formError, setFormError] = useState('')
+
+  const resetForm = () => {
+    setFormData({ name: '', label: '', color: '#6366f1', icon: 'mail', is_active: true, sort_order: 0 })
+    setFormError('')
+  }
+
+  const handleAddChannel = async () => {
+    setFormError('')
+    if (!formData.name || !formData.label) {
+      setFormError('Ad ve Etiket zorunludur')
+      return
+    }
+    // Slug format for name
+    const slug = formData.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    try {
+      await createChannel.mutateAsync({
+        name: slug,
+        label: formData.label,
+        color: formData.color,
+        icon: formData.icon,
+        is_active: formData.is_active,
+        sort_order: channels?.length || 0,
+      })
+      setShowAddDialog(false)
+      resetForm()
+    } catch (error: any) {
+      setFormError(error.message || 'Kanal oluşturulurken hata oluştu')
+    }
+  }
+
+  const handleEditChannel = async () => {
+    if (!editingChannel) return
+    try {
+      await updateChannel.mutateAsync({
+        id: editingChannel.id,
+        label: formData.label,
+        color: formData.color,
+        icon: formData.icon,
+        is_active: formData.is_active,
+      })
+      setEditingChannel(null)
+      resetForm()
+    } catch (error: any) {
+      setFormError(error.message || 'Kanal güncellenirken hata oluştu')
+    }
+  }
+
+  const openEditDialog = (channel: Channel) => {
+    setEditingChannel(channel)
+    setFormData({
+      name: channel.name,
+      label: channel.label,
+      color: channel.color,
+      icon: channel.icon,
+      is_active: channel.is_active,
+      sort_order: channel.sort_order,
+    })
+    setFormError('')
+  }
+
+  const handleDeleteChannel = async (id: string) => {
+    try {
+      await deleteChannel.mutateAsync(id)
+      setDeleteConfirm(null)
+    } catch (error: any) {
+      alert(error.message || 'Kanal silinirken hata oluştu')
+    }
+  }
+
+  if (isLoading) {
+    return <div className="animate-pulse h-64 bg-neutral-100 rounded-lg" />
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Kanallar</CardTitle>
+          <Button size="sm" onClick={() => setShowAddDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Yeni Kanal
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {channels?.map((channel) => {
+              const IconComponent = getIconComponent(channel.icon)
+              return (
+                <div
+                  key={channel.id}
+                  className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 hover:border-neutral-300 transition-colors"
+                >
+                  <div
+                    className="h-12 w-12 rounded-xl flex items-center justify-center text-white"
+                    style={{ backgroundColor: channel.color }}
+                  >
+                    <IconComponent className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-neutral-900">{channel.label}</p>
+                    <p className="text-sm text-neutral-500">{channel.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={channel.is_active ? 'bg-green-100 text-green-800' : 'bg-neutral-100 text-neutral-800'}>
+                      {channel.is_active ? 'Aktif' : 'Pasif'}
+                    </Badge>
+                    <div
+                      className="h-6 w-6 rounded-full border-2 border-white shadow"
+                      style={{ backgroundColor: channel.color }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEditDialog(channel)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(channel.id)}>
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+            {(!channels || channels.length === 0) && (
+              <div className="text-center py-8 text-neutral-500">
+                Henüz kanal eklenmemiş
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Add Channel Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Yeni Kanal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {formError && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                <AlertCircle className="h-4 w-4" />
+                {formError}
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sistem Adı *</label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="ornek_kanal"
+              />
+              <p className="text-xs text-neutral-500">Küçük harf ve alt çizgi kullanın</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Görünen Ad *</label>
+              <Input
+                value={formData.label}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                placeholder="Örnek Kanal"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Renk</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  className="h-10 w-20 rounded cursor-pointer"
+                />
+                <Input
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">İkon</label>
+              <div className="grid grid-cols-5 gap-2">
+                {iconOptions.map((opt) => {
+                  const Icon = opt.icon
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, icon: opt.value })}
+                      className={`p-3 rounded-lg border-2 transition-colors ${
+                        formData.icon === opt.value
+                          ? 'border-neutral-900 bg-neutral-100'
+                          : 'border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 mx-auto" />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>İptal</Button>
+              <Button onClick={handleAddChannel} disabled={createChannel.isPending}>
+                {createChannel.isPending ? 'Ekleniyor...' : 'Ekle'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Channel Dialog */}
+      <Dialog open={!!editingChannel} onOpenChange={(open) => !open && setEditingChannel(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Kanalı Düzenle</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {formError && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                <AlertCircle className="h-4 w-4" />
+                {formError}
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sistem Adı</label>
+              <Input value={formData.name} disabled className="bg-neutral-50" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Görünen Ad *</label>
+              <Input
+                value={formData.label}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Renk</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  className="h-10 w-20 rounded cursor-pointer"
+                />
+                <Input
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">İkon</label>
+              <div className="grid grid-cols-5 gap-2">
+                {iconOptions.map((opt) => {
+                  const Icon = opt.icon
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, icon: opt.value })}
+                      className={`p-3 rounded-lg border-2 transition-colors ${
+                        formData.icon === opt.value
+                          ? 'border-neutral-900 bg-neutral-100'
+                          : 'border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 mx-auto" />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <label htmlFor="is_active" className="text-sm font-medium">Aktif</label>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setEditingChannel(null)}>İptal</Button>
+              <Button onClick={handleEditChannel} disabled={updateChannel.isPending}>
+                {updateChannel.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Kanalı Sil</DialogTitle>
+          </DialogHeader>
+          <p className="text-neutral-600">Bu kanalı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button>
+            <Button variant="destructive" onClick={() => handleDeleteChannel(deleteConfirm!)}>
+              Sil
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -22,14 +22,15 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useCreateMarketingItem, useUpdateMarketingItem, useDeleteMarketingItem } from '@/hooks/use-marketing-items'
+import { useChannels } from '@/hooks/use-channels'
 import { Trash2 } from 'lucide-react'
 import type { MarketingItem, ChannelType, ItemStatus } from '@/types/database'
-import { channelLabels, statusLabels } from '@/lib/utils'
+import { statusLabels } from '@/lib/utils'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Başlık gerekli'),
   description: z.string().optional(),
-  channel: z.enum(['email', 'sms', 'meta_ads', 'instagram']),
+  channel: z.string().min(1, 'Kanal seçin'),
   status: z.enum(['planned', 'in_progress', 'completed']),
   scheduled_date: z.string().optional(),
   scheduled_time: z.string().optional(),
@@ -48,6 +49,7 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
   const createItem = useCreateMarketingItem()
   const updateItem = useUpdateMarketingItem()
   const deleteItem = useDeleteMarketingItem()
+  const { data: channels } = useChannels()
   const isEditing = !!item
 
   const handleDelete = async () => {
@@ -69,7 +71,7 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
     defaultValues: {
       title: '',
       description: '',
-      channel: 'instagram',
+      channel: '',
       status: 'planned',
       scheduled_date: '',
       scheduled_time: '',
@@ -92,14 +94,14 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
       reset({
         title: '',
         description: '',
-        channel: 'instagram',
+        channel: channels?.[0]?.name || '',
         status: 'planned',
         scheduled_date: '',
         scheduled_time: '',
         notes: '',
       })
     }
-  }, [item, reset])
+  }, [item, reset, channels])
 
   const onSubmit = async (data: FormData) => {
     const payload = {
@@ -157,9 +159,15 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
                       <SelectValue placeholder="Kanal seçin" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(channelLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
+                      {channels?.map((channel) => (
+                        <SelectItem key={channel.name} value={channel.name}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: channel.color }}
+                            />
+                            {channel.label}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

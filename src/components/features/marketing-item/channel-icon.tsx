@@ -1,21 +1,24 @@
-import { Mail, MessageSquare, Megaphone, Instagram } from 'lucide-react'
-import type { ChannelType } from '@/types/database'
-import { channelColors } from '@/lib/utils'
+import { Mail, MessageSquare, Megaphone, Instagram, Send, Radio, Tv, Globe, Phone } from 'lucide-react'
 
 interface ChannelIconProps {
-  channel: ChannelType
+  icon?: string
+  color?: string
   className?: string
 }
 
-export function ChannelIcon({ channel, className = 'h-4 w-4' }: ChannelIconProps) {
-  const color = channelColors[channel]
+const iconComponents: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  'mail': Mail,
+  'message-square': MessageSquare,
+  'megaphone': Megaphone,
+  'instagram': Instagram,
+  'send': Send,
+  'radio': Radio,
+  'tv': Tv,
+  'globe': Globe,
+  'phone': Phone,
+}
 
-  const icons: Record<ChannelType, React.ReactNode> = {
-    email: <Mail className={className} style={{ color }} />,
-    sms: <MessageSquare className={className} style={{ color }} />,
-    meta_ads: <Megaphone className={className} style={{ color }} />,
-    instagram: <Instagram className={className} style={{ color }} />,
-  }
-
-  return icons[channel]
+export function ChannelIcon({ icon = 'mail', color, className = 'h-4 w-4' }: ChannelIconProps) {
+  const IconComponent = iconComponents[icon] || Mail
+  return <IconComponent className={className} style={color ? { color } : undefined} />
 }

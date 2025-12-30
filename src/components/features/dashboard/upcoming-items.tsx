@@ -3,19 +3,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useMarketingItems } from '@/hooks/use-marketing-items'
-import { formatDate, channelLabels, channelColors } from '@/lib/utils'
-import { CalendarClock, Calendar, Clock, ArrowRight, Inbox, Mail, MessageSquare, Megaphone, Instagram } from 'lucide-react'
-import type { ChannelType } from '@/types/database'
-
-const channelIcons: Record<ChannelType, React.ReactNode> = {
-  email: <Mail className="h-4 w-4" />,
-  sms: <MessageSquare className="h-4 w-4" />,
-  meta_ads: <Megaphone className="h-4 w-4" />,
-  instagram: <Instagram className="h-4 w-4" />,
-}
+import { useChannelHelpers } from '@/hooks/use-channels'
+import { formatDate } from '@/lib/utils'
+import { CalendarClock, Calendar, Clock, ArrowRight, Inbox } from 'lucide-react'
+import { ChannelIcon } from '@/components/features/marketing-item/channel-icon'
 
 export function UpcomingItems() {
   const { data: items, isLoading } = useMarketingItems()
+  const { getChannelLabel, getChannelColor, getChannelIcon } = useChannelHelpers()
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -83,9 +78,9 @@ export function UpcomingItems() {
                 {/* Channel Icon */}
                 <div
                   className="h-12 w-12 rounded-xl flex items-center justify-center text-white shadow-sm"
-                  style={{ backgroundColor: channelColors[item.channel] }}
+                  style={{ backgroundColor: getChannelColor(item.channel) }}
                 >
-                  {channelIcons[item.channel]}
+                  <ChannelIcon icon={getChannelIcon(item.channel)} className="h-5 w-5" />
                 </div>
 
                 {/* Content */}
@@ -109,10 +104,11 @@ export function UpcomingItems() {
 
                 {/* Badge */}
                 <Badge
-                  variant={item.channel as ChannelType}
+                  variant="channel"
+                  color={getChannelColor(item.channel)}
                   className="hidden sm:flex"
                 >
-                  {channelLabels[item.channel]}
+                  {getChannelLabel(item.channel)}
                 </Badge>
 
                 {/* Hover Arrow */}

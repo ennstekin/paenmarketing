@@ -2,27 +2,23 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { channelColors, channelLabels } from '@/lib/utils'
-import { PieChart as PieChartIcon, Mail, MessageSquare, Megaphone, Instagram } from 'lucide-react'
-import type { ChannelType } from '@/types/database'
+import { useChannelHelpers } from '@/hooks/use-channels'
+import { PieChart as PieChartIcon } from 'lucide-react'
+import { ChannelIcon } from '@/components/features/marketing-item/channel-icon'
 
 interface ChannelChartProps {
   data: Record<string, number>
 }
 
-const channelIcons: Record<ChannelType, React.ReactNode> = {
-  email: <Mail className="h-4 w-4" />,
-  sms: <MessageSquare className="h-4 w-4" />,
-  meta_ads: <Megaphone className="h-4 w-4" />,
-  instagram: <Instagram className="h-4 w-4" />,
-}
-
 export function ChannelChart({ data }: ChannelChartProps) {
+  const { getChannelLabel, getChannelColor, getChannelIcon } = useChannelHelpers()
+
   const chartData = Object.entries(data).map(([channel, count]) => ({
-    name: channelLabels[channel] || channel,
+    name: getChannelLabel(channel),
     value: count,
-    color: channelColors[channel] || '#6b7280',
-    channel: channel as ChannelType,
+    color: getChannelColor(channel),
+    channel,
+    icon: getChannelIcon(channel),
   }))
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0)
@@ -101,7 +97,7 @@ export function ChannelChart({ data }: ChannelChartProps) {
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
                   style={{ backgroundColor: item.color }}
                 >
-                  {channelIcons[item.channel]}
+                  <ChannelIcon icon={item.icon} className="h-4 w-4" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-neutral-900">{item.name}</p>

@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type ChannelType = 'email' | 'sms' | 'meta_ads' | 'instagram'
+export type ChannelType = string
 export type ItemStatus = 'planned' | 'in_progress' | 'completed'
 export type UserRole = 'admin' | 'editor' | 'viewer'
 
@@ -222,6 +222,41 @@ export interface Database {
           tag_id?: string
         }
       }
+      channels: {
+        Row: {
+          id: string
+          name: string
+          label: string
+          color: string
+          icon: string
+          is_active: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          label: string
+          color: string
+          icon?: string
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          label?: string
+          color?: string
+          icon?: string
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -249,3 +284,15 @@ export type Attachment = Tables<'attachments'>
 export type Tag = Tables<'tags'>
 export type ActivityLog = Tables<'activity_logs'>
 export type Permission = Tables<'permissions'>
+
+export interface Channel {
+  id: string
+  name: string
+  label: string
+  color: string
+  icon: string
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
