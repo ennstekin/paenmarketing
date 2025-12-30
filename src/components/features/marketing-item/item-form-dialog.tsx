@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { useCreateMarketingItem, useUpdateMarketingItem } from '@/hooks/use-marketing-items'
+import { useCreateMarketingItem, useUpdateMarketingItem, useDeleteMarketingItem } from '@/hooks/use-marketing-items'
+import { Trash2 } from 'lucide-react'
 import type { MarketingItem, ChannelType, ItemStatus } from '@/types/database'
 import { channelLabels, statusLabels } from '@/lib/utils'
 
@@ -46,7 +47,16 @@ interface ItemFormDialogProps {
 export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps) {
   const createItem = useCreateMarketingItem()
   const updateItem = useUpdateMarketingItem()
+  const deleteItem = useDeleteMarketingItem()
   const isEditing = !!item
+
+  const handleDelete = async () => {
+    if (!item) return
+    if (confirm('Bu içeriği silmek istediğinize emin misiniz?')) {
+      await deleteItem.mutateAsync(item.id)
+      onOpenChange(false)
+    }
+  }
 
   const {
     register,
@@ -198,24 +208,39 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
             <Textarea {...register('notes')} placeholder="Ek notlar" />
           </div>
 
-          <DialogFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              İptal
-            </Button>
-            <Button
-              type="submit"
-              disabled={createItem.isPending || updateItem.isPending}
-            >
-              {createItem.isPending || updateItem.isPending
-                ? 'Kaydediliyor...'
-                : isEditing
-                ? 'Güncelle'
-                : 'Ekle'}
-            </Button>
+          <DialogFooter className="pt-4 flex justify-between">
+            <div>
+              {isEditing && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleteItem.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {deleteItem.isPending ? 'Siliniyor...' : 'Sil'}
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                İptal
+              </Button>
+              <Button
+                type="submit"
+                disabled={createItem.isPending || updateItem.isPending}
+              >
+                {createItem.isPending || updateItem.isPending
+                  ? 'Kaydediliyor...'
+                  : isEditing
+                  ? 'Güncelle'
+                  : 'Ekle'}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
