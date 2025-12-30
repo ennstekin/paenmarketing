@@ -143,9 +143,7 @@ body {
   font-weight: 600;
 }
 
-.fc-h-event {
-  background: linear-gradient(135deg, var(--fc-event-bg-color), var(--fc-event-bg-color));
-}
+/* Event colors come from inline styles set by FullCalendar */
 
 .fc .fc-scrollgrid {
   border-radius: 0.75rem;
