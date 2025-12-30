@@ -29,14 +29,26 @@ import {
   useMarketingItems,
   useDeleteMarketingItem,
 } from '@/hooks/use-marketing-items'
-import { useChannels, useChannelHelpers } from '@/hooks/use-channels'
+import { useChannels } from '@/hooks/use-channels'
 import { formatDate, statusLabels } from '@/lib/utils'
-import type { MarketingItem, ItemStatus } from '@/types/database'
+import type { MarketingItem, ItemStatus, Channel } from '@/types/database'
+
+// Helper functions that work with channel data
+const getChannelLabel = (channels: Channel[] | undefined, name: string) => {
+  return channels?.find(c => c.name === name)?.label || name
+}
+
+const getChannelColor = (channels: Channel[] | undefined, name: string) => {
+  return channels?.find(c => c.name === name)?.color || '#6b7280'
+}
+
+const getChannelIcon = (channels: Channel[] | undefined, name: string) => {
+  return channels?.find(c => c.name === name)?.icon || 'mail'
+}
 
 export function DataTable() {
   const { data: items, isLoading } = useMarketingItems()
   const { data: channels } = useChannels()
-  const { getChannelLabel, getChannelColor, getChannelIcon } = useChannelHelpers()
   const deleteItem = useDeleteMarketingItem()
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -74,8 +86,8 @@ export function DataTable() {
           const channel = row.getValue('channel') as string
           return (
             <div className="flex items-center gap-2">
-              <ChannelIcon icon={getChannelIcon(channel)} color={getChannelColor(channel)} />
-              <Badge variant="channel" color={getChannelColor(channel)}>{getChannelLabel(channel)}</Badge>
+              <ChannelIcon icon={getChannelIcon(channels, channel)} color={getChannelColor(channels, channel)} />
+              <Badge variant="channel" color={getChannelColor(channels, channel)}>{getChannelLabel(channels, channel)}</Badge>
             </div>
           )
         },
@@ -142,7 +154,7 @@ export function DataTable() {
         ),
       },
     ],
-    [getChannelLabel, getChannelColor, getChannelIcon]
+    [channels]
   )
 
   const table = useReactTable({

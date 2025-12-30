@@ -23,7 +23,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useCreateMarketingItem, useUpdateMarketingItem, useDeleteMarketingItem } from '@/hooks/use-marketing-items'
 import { useChannels } from '@/hooks/use-channels'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Loader2 } from 'lucide-react'
 import type { MarketingItem, ChannelType, ItemStatus } from '@/types/database'
 import { statusLabels } from '@/lib/utils'
 
@@ -49,7 +49,7 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
   const createItem = useCreateMarketingItem()
   const updateItem = useUpdateMarketingItem()
   const deleteItem = useDeleteMarketingItem()
-  const { data: channels } = useChannels()
+  const { data: channels, isLoading: channelsLoading } = useChannels()
   const isEditing = !!item
 
   const handleDelete = async () => {
@@ -80,6 +80,8 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
   })
 
   useEffect(() => {
+    if (!open) return // Don't reset when dialog is closed
+
     if (item) {
       reset({
         title: item.title,
@@ -90,18 +92,18 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
         scheduled_time: item.scheduled_time || '',
         notes: item.notes || '',
       })
-    } else {
+    } else if (channels && channels.length > 0) {
       reset({
         title: '',
         description: '',
-        channel: channels?.[0]?.name || '',
+        channel: channels[0].name,
         status: 'planned',
         scheduled_date: '',
         scheduled_time: '',
         notes: '',
       })
     }
-  }, [item, reset, channels])
+  }, [item, reset, channels, open])
 
   const onSubmit = async (data: FormData) => {
     const payload = {
@@ -150,30 +152,37 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Kanal *</label>
-              <Controller
-                name="channel"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Kanal seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {channels?.map((channel) => (
-                        <SelectItem key={channel.name} value={channel.name}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: channel.color }}
-                            />
-                            {channel.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              {channelsLoading ? (
+                <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-neutral-50">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-neutral-500">Yükleniyor...</span>
+                </div>
+              ) : (
+                <Controller
+                  name="channel"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kanal seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {channels?.map((channel) => (
+                          <SelectItem key={channel.name} value={channel.name}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: channel.color }}
+                              />
+                              {channel.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              )}
             </div>
 
             <div className="space-y-2">

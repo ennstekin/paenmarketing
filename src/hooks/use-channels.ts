@@ -110,22 +110,28 @@ export function useDeleteChannel() {
 
 // Helper hook to get channel data by name
 export function useChannelHelpers() {
-  const { data: channels } = useChannels()
+  const { data: channels, isLoading } = useChannels()
+
+  // Create lookup maps for quick access
+  const channelMap = channels?.reduce((acc, c) => {
+    acc[c.name] = c
+    return acc
+  }, {} as Record<string, Channel>) || {}
 
   const getChannelLabel = (name: string) => {
-    return channels?.find(c => c.name === name)?.label || name
+    return channelMap[name]?.label || name
   }
 
   const getChannelColor = (name: string) => {
-    return channels?.find(c => c.name === name)?.color || '#6b7280'
+    return channelMap[name]?.color || '#6b7280'
   }
 
   const getChannelIcon = (name: string) => {
-    return channels?.find(c => c.name === name)?.icon || 'mail'
+    return channelMap[name]?.icon || 'mail'
   }
 
   const channelLabels = channels?.reduce((acc, c) => ({ ...acc, [c.name]: c.label }), {} as Record<string, string>) || {}
   const channelColors = channels?.reduce((acc, c) => ({ ...acc, [c.name]: c.color }), {} as Record<string, string>) || {}
 
-  return { channels, getChannelLabel, getChannelColor, getChannelIcon, channelLabels, channelColors }
+  return { channels, isLoading, getChannelLabel, getChannelColor, getChannelIcon, channelLabels, channelColors }
 }
