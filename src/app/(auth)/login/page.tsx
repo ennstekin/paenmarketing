@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -80,11 +79,8 @@ export default function LoginPage() {
               {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-neutral-600">
-            Hesabınız yok mu?{' '}
-            <Link href="/signup" className="font-medium text-neutral-900 hover:underline">
-              Kayıt olun
-            </Link>
+          <p className="mt-4 text-center text-sm text-neutral-500">
+            Giriş bilgilerinizi yöneticinizden alabilirsiniz.
           </p>
         </CardContent>
       </Card>
