@@ -27,8 +27,6 @@ const formSchema = z.object({
   scheduled_date: z.string().optional(),
   scheduled_time: z.string().optional(),
   notes: z.string().optional(),
-  target_audience: z.string().optional(),
-  budget: z.string().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -59,8 +57,6 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
       scheduled_date: '',
       scheduled_time: '',
       notes: '',
-      target_audience: '',
-      budget: '',
     },
   })
 
@@ -74,8 +70,6 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
         scheduled_date: item.scheduled_date || '',
         scheduled_time: item.scheduled_time || '',
         notes: item.notes || '',
-        target_audience: item.target_audience || '',
-        budget: item.budget?.toString() || '',
       })
     } else {
       reset({
@@ -86,8 +80,6 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
         scheduled_date: '',
         scheduled_time: '',
         notes: '',
-        target_audience: '',
-        budget: '',
       })
     }
   }, [item, reset])
@@ -101,8 +93,6 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
       scheduled_date: data.scheduled_date || null,
       scheduled_time: data.scheduled_time || null,
       notes: data.notes || null,
-      target_audience: data.target_audience || null,
-      budget: data.budget ? parseFloat(data.budget) : null,
     }
 
     if (isEditing && item) {
@@ -172,24 +162,6 @@ export function ItemFormDialog({ open, onOpenChange, item }: ItemFormDialogProps
               <label className="text-sm font-medium">Saat</label>
               <Input type="time" {...register('scheduled_time')} />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Hedef Kitle</label>
-            <Input
-              {...register('target_audience')}
-              placeholder="Örn: 25-34 yaş, kadın"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Bütçe (TL)</label>
-            <Input
-              type="number"
-              step="0.01"
-              {...register('budget')}
-              placeholder="0.00"
-            />
           </div>
 
           <div className="space-y-2">

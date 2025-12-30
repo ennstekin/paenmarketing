@@ -115,15 +115,6 @@ export function DataTable() {
         },
       },
       {
-        accessorKey: 'budget',
-        header: 'Bütçe',
-        cell: ({ row }) => {
-          const budget = row.getValue('budget') as number | null
-          if (!budget) return <span className="text-neutral-400">-</span>
-          return <span>{budget.toLocaleString('tr-TR')} TL</span>
-        },
-      },
-      {
         id: 'actions',
         cell: ({ row }) => (
           <div className="flex items-center gap-2">

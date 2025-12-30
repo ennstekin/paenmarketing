@@ -124,8 +124,6 @@ export interface Database {
           scheduled_time: string | null
           actual_publish_date: string | null
           notes: string | null
-          target_audience: string | null
-          budget: number | null
           created_at: string
           updated_at: string
         }
@@ -140,8 +138,6 @@ export interface Database {
           scheduled_time?: string | null
           actual_publish_date?: string | null
           notes?: string | null
-          target_audience?: string | null
-          budget?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -156,8 +152,6 @@ export interface Database {
           scheduled_time?: string | null
           actual_publish_date?: string | null
           notes?: string | null
-          target_audience?: string | null
-          budget?: number | null
           created_at?: string
           updated_at?: string
         }
