@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -32,32 +32,44 @@ export function CalendarView() {
   const [selectedItem, setSelectedItem] = useState<MarketingItem | null>(null)
   const [showDialog, setShowDialog] = useState(false)
 
+  // Create channel lookup map
+  const channelMap = useMemo(() => {
+    return channels?.reduce((acc, c) => {
+      acc[c.name] = c
+      return acc
+    }, {} as Record<string, typeof channels[0]>) || {}
+  }, [channels])
+
   const getChannelColor = (channelName: string) => {
-    return channels?.find(c => c.name === channelName)?.color || '#6b7280'
+    return channelMap[channelName]?.color || '#6b7280'
   }
 
   const getChannelIcon = (channelName: string) => {
-    const channel = channels?.find(c => c.name === channelName)
+    const channel = channelMap[channelName]
     const IconComponent = iconComponents[channel?.icon || 'mail'] || Mail
     return <IconComponent className="h-3 w-3" />
   }
 
-  const events = items?.map((item) => ({
-    id: item.id,
-    title: item.title,
-    start: item.scheduled_date
-      ? item.scheduled_time
-        ? `${item.scheduled_date}T${item.scheduled_time}`
-        : item.scheduled_date
-      : undefined,
-    allDay: !item.scheduled_time,
-    backgroundColor: getChannelColor(item.channel),
-    borderColor: getChannelColor(item.channel),
-    extendedProps: {
-      item,
-      channel: item.channel,
-    },
-  })).filter((event) => event.start) || []
+  const events = useMemo(() => {
+    if (!items || !channels || channels.length === 0) return []
+
+    return items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      start: item.scheduled_date
+        ? item.scheduled_time
+          ? `${item.scheduled_date}T${item.scheduled_time}`
+          : item.scheduled_date
+        : undefined,
+      allDay: !item.scheduled_time,
+      backgroundColor: channelMap[item.channel]?.color || '#6b7280',
+      borderColor: channelMap[item.channel]?.color || '#6b7280',
+      extendedProps: {
+        item,
+        channel: item.channel,
+      },
+    })).filter((event) => event.start)
+  }, [items, channels, channelMap])
 
   const handleEventClick = (info: EventClickArg) => {
     const item = info.event.extendedProps.item as MarketingItem
