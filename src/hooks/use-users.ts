@@ -102,41 +102,30 @@ export function useToggleUserActive() {
 
 export function useCreateUser() {
   const queryClient = useQueryClient()
-  const supabase = createClient()
 
   return useMutation({
     mutationFn: async (input: CreateUserInput) => {
-      // Create user via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: input.email,
-        password: input.password,
-        options: {
-          data: {
-            full_name: input.full_name,
-          },
+      // Use Admin API route to create user (no auto-login)
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          email: input.email,
+          password: input.password,
+          full_name: input.full_name,
+          role: input.role,
+        }),
       })
 
-      if (authError) throw authError
-      if (!authData.user) throw new Error('Kullanıcı oluşturulamadı')
+      const data = await response.json()
 
-      // Update profile with role (trigger will create the profile)
-      // Wait a bit for the trigger to create the profile
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (!response.ok) {
+        throw new Error(data.error || 'Kullanıcı oluşturulamadı')
+      }
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          role: input.role,
-          full_name: input.full_name,
-          must_change_password: input.must_change_password ?? true,
-          temp_password_hint: input.password, // Store hint for admin to see
-        } as never)
-        .eq('id', authData.user.id)
-
-      if (updateError) throw updateError
-
-      return authData.user
+      return data.user
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
