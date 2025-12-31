@@ -9,6 +9,10 @@ export type Json =
 export type ChannelType = string
 export type ItemStatus = 'planned' | 'in_progress' | 'completed'
 export type UserRole = 'admin' | 'editor' | 'viewer'
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'changes_requested'
+export type NotificationType = 'mention' | 'comment' | 'assignment' | 'approval_request' | 'approval_response' | 'deadline' | 'status_change'
+export type Priority = 'low' | 'normal' | 'high' | 'urgent'
+export type ContentType = 'post' | 'story' | 'reel' | 'article' | 'newsletter' | 'ad'
 
 export interface Database {
   public: {
@@ -119,11 +123,21 @@ export interface Database {
           title: string
           description: string | null
           channel: ChannelType
+          channels: ChannelType[]
           status: ItemStatus
           scheduled_date: string | null
           scheduled_time: string | null
           actual_publish_date: string | null
           notes: string | null
+          url: string | null
+          assigned_to: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          priority: Priority
+          content_type: ContentType | null
+          deadline: string | null
+          campaign_id: string | null
+          checklist: Json
           created_at: string
           updated_at: string
         }
@@ -132,12 +146,22 @@ export interface Database {
           user_id: string
           title: string
           description?: string | null
-          channel: ChannelType
+          channel?: ChannelType
+          channels?: ChannelType[]
           status?: ItemStatus
           scheduled_date?: string | null
           scheduled_time?: string | null
           actual_publish_date?: string | null
           notes?: string | null
+          url?: string | null
+          assigned_to?: string | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          priority?: Priority
+          content_type?: ContentType | null
+          deadline?: string | null
+          campaign_id?: string | null
+          checklist?: Json
           created_at?: string
           updated_at?: string
         }
@@ -147,11 +171,21 @@ export interface Database {
           title?: string
           description?: string | null
           channel?: ChannelType
+          channels?: ChannelType[]
           status?: ItemStatus
           scheduled_date?: string | null
           scheduled_time?: string | null
           actual_publish_date?: string | null
           notes?: string | null
+          url?: string | null
+          assigned_to?: string | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          priority?: Priority
+          content_type?: ContentType | null
+          deadline?: string | null
+          campaign_id?: string | null
+          checklist?: Json
           created_at?: string
           updated_at?: string
         }
@@ -257,6 +291,108 @@ export interface Database {
           updated_at?: string
         }
       }
+      comments: {
+        Row: {
+          id: string
+          marketing_item_id: string
+          user_id: string | null
+          parent_id: string | null
+          content: string
+          mentions: string[]
+          is_edited: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          marketing_item_id: string
+          user_id?: string | null
+          parent_id?: string | null
+          content: string
+          mentions?: string[]
+          is_edited?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          marketing_item_id?: string
+          user_id?: string | null
+          parent_id?: string | null
+          content?: string
+          mentions?: string[]
+          is_edited?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: NotificationType
+          title: string
+          message: string | null
+          link: string | null
+          metadata: Json
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: NotificationType
+          title: string
+          message?: string | null
+          link?: string | null
+          metadata?: Json
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: NotificationType
+          title?: string
+          message?: string | null
+          link?: string | null
+          metadata?: Json
+          is_read?: boolean
+          created_at?: string
+        }
+      }
+      approval_requests: {
+        Row: {
+          id: string
+          marketing_item_id: string
+          requester_id: string
+          reviewer_id: string | null
+          status: ApprovalStatus
+          notes: string | null
+          reviewed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          marketing_item_id: string
+          requester_id: string
+          reviewer_id?: string | null
+          status?: ApprovalStatus
+          notes?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          marketing_item_id?: string
+          requester_id?: string
+          reviewer_id?: string | null
+          status?: ApprovalStatus
+          notes?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -284,6 +420,9 @@ export type Attachment = Tables<'attachments'>
 export type Tag = Tables<'tags'>
 export type ActivityLog = Tables<'activity_logs'>
 export type Permission = Tables<'permissions'>
+export type Comment = Tables<'comments'>
+export type Notification = Tables<'notifications'>
+export type ApprovalRequest = Tables<'approval_requests'>
 
 export interface Channel {
   id: string

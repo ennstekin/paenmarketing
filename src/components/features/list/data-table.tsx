@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { ChannelIcon } from '@/components/features/marketing-item/channel-icon'
 import { ItemFormDialog } from '@/components/features/marketing-item/item-form-dialog'
 import {
   useMarketingItems,
@@ -40,10 +39,6 @@ const getChannelLabel = (channels: Channel[] | undefined, name: string) => {
 
 const getChannelColor = (channels: Channel[] | undefined, name: string) => {
   return channels?.find(c => c.name === name)?.color || '#6b7280'
-}
-
-const getChannelIcon = (channels: Channel[] | undefined, name: string) => {
-  return channels?.find(c => c.name === name)?.icon || 'mail'
 }
 
 export function DataTable() {
@@ -80,19 +75,33 @@ export function DataTable() {
         ),
       },
       {
-        accessorKey: 'channel',
-        header: 'Kanal',
+        accessorKey: 'channels',
+        header: 'Kanallar',
         cell: ({ row }) => {
-          const channel = row.getValue('channel') as string
+          // Support both old single channel and new multiple channels
+          const itemChannels = (row.original as MarketingItem & { channels?: string[] }).channels ||
+            (row.original.channel ? [row.original.channel] : [])
+
           return (
-            <div className="flex items-center gap-2">
-              <ChannelIcon icon={getChannelIcon(channels, channel)} color={getChannelColor(channels, channel)} />
-              <Badge variant="channel" color={getChannelColor(channels, channel)}>{getChannelLabel(channels, channel)}</Badge>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {itemChannels.map((channelName) => (
+                <Badge
+                  key={channelName}
+                  variant="channel"
+                  color={getChannelColor(channels, channelName)}
+                  className="text-xs"
+                >
+                  {getChannelLabel(channels, channelName)}
+                </Badge>
+              ))}
             </div>
           )
         },
         filterFn: (row, id, value) => {
-          return value === 'all' || row.getValue(id) === value
+          if (value === 'all') return true
+          const itemChannels = (row.original as MarketingItem & { channels?: string[] }).channels ||
+            (row.original.channel ? [row.original.channel] : [])
+          return itemChannels.includes(value)
         },
       },
       {
@@ -204,9 +213,9 @@ export function DataTable() {
             className="max-w-xs"
           />
           <Select
-            value={(table.getColumn('channel')?.getFilterValue() as string) ?? 'all'}
+            value={(table.getColumn('channels')?.getFilterValue() as string) ?? 'all'}
             onValueChange={(value) =>
-              table.getColumn('channel')?.setFilterValue(value === 'all' ? undefined : value)
+              table.getColumn('channels')?.setFilterValue(value === 'all' ? undefined : value)
             }
           >
             <SelectTrigger className="w-[150px]">

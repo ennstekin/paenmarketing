@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import type { EventClickArg, EventDropArg } from '@fullcalendar/core'
+import type { DateClickArg } from '@fullcalendar/interaction'
+import type { EventClickArg, EventDropArg, DayCellMountArg } from '@fullcalendar/core'
 import { useMarketingItems, useUpdateMarketingItem } from '@/hooks/use-marketing-items'
 import { useChannels } from '@/hooks/use-channels'
 import { ItemFormDialog } from '@/components/features/marketing-item/item-form-dialog'
@@ -31,6 +32,7 @@ export function CalendarView() {
   const updateItem = useUpdateMarketingItem()
   const [selectedItem, setSelectedItem] = useState<MarketingItem | null>(null)
   const [showDialog, setShowDialog] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   // Create channel lookup map
   const channelMap = useMemo(() => {
@@ -53,22 +55,36 @@ export function CalendarView() {
   const events = useMemo(() => {
     if (!items || !channels || channels.length === 0) return []
 
-    return items.map((item) => ({
-      id: item.id,
-      title: item.title,
-      start: item.scheduled_date
-        ? item.scheduled_time
+    return items
+      .filter((item) => item.scheduled_date)
+      .map((item) => {
+        // Support both old single channel and new multiple channels
+        const itemChannels = (item as MarketingItem & { channels?: string[] }).channels ||
+          (item.channel ? [item.channel] : [])
+
+        const startDate = item.scheduled_time
           ? `${item.scheduled_date}T${item.scheduled_time}`
           : item.scheduled_date
-        : undefined,
-      allDay: !item.scheduled_time,
-      backgroundColor: channelMap[item.channel]?.color || '#6b7280',
-      borderColor: channelMap[item.channel]?.color || '#6b7280',
-      extendedProps: {
-        item,
-        channel: item.channel,
-      },
-    })).filter((event) => event.start)
+
+        // Get colors for all channels
+        const channelColors = itemChannels.map(c => channelMap[c]?.color || '#6b7280')
+        const primaryColor = channelColors[0] || '#6b7280'
+
+        return {
+          id: item.id,
+          title: item.title,
+          start: startDate!,
+          allDay: !item.scheduled_time,
+          backgroundColor: '#262626',
+          borderColor: '#262626',
+          textColor: '#ffffff',
+          extendedProps: {
+            item,
+            channels: itemChannels,
+            channelColors,
+          },
+        }
+      })
   }, [items, channels, channelMap])
 
   const handleEventClick = (info: EventClickArg) => {
@@ -77,17 +93,69 @@ export function CalendarView() {
     setShowDialog(true)
   }
 
+  const openFormWithDate = useCallback((dateStr: string) => {
+    setSelectedDate(dateStr)
+    setSelectedItem(null)
+    setShowDialog(true)
+  }, [])
+
+  const handleDateClick = (info: DateClickArg) => {
+    // Format date in local timezone
+    const date = info.date
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const formattedDate = `${year}-${month}-${day}`
+    openFormWithDate(formattedDate)
+  }
+
+  const handleDayCellDidMount = useCallback((arg: DayCellMountArg) => {
+    const dayTop = arg.el.querySelector('.fc-daygrid-day-top')
+    if (!dayTop) return
+
+    // Create the + button
+    const btn = document.createElement('button')
+    btn.className = 'add-content-btn w-5 h-5 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center transition-opacity z-10'
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-600"><path d="M5 12h14"/><path d="M12 5v14"/></svg>'
+    btn.style.position = 'absolute'
+    btn.style.left = '4px'
+    btn.style.top = '4px'
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const date = arg.date
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const formattedDate = `${year}-${month}-${day}`
+      openFormWithDate(formattedDate)
+    })
+
+    // Make dayTop relative for absolute positioning
+    ;(dayTop as HTMLElement).style.position = 'relative'
+    dayTop.appendChild(btn)
+  }, [openFormWithDate])
+
   const handleEventDrop = async (info: EventDropArg) => {
     if (!info.event.start) {
       info.revert()
       return
     }
 
-    const newDate = info.event.start.toISOString().split('T')[0]
+    // Format date in local timezone (YYYY-MM-DD)
+    const date = info.event.start
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const newDate = `${year}-${month}-${day}`
+
+    // Extract original item id
+    const item = info.event.extendedProps.item as MarketingItem
+    const itemId = item.id
 
     try {
       await updateItem.mutateAsync({
-        id: info.event.id,
+        id: itemId,
         scheduled_date: newDate,
       })
     } catch {
@@ -155,19 +223,49 @@ export function CalendarView() {
             }}
             events={events}
             eventClick={handleEventClick}
+            dateClick={handleDateClick}
             editable={true}
             eventDrop={handleEventDrop}
+            dayCellDidMount={handleDayCellDidMount}
             height="auto"
             dayMaxEvents={3}
             moreLinkText={(num) => `+${num} daha`}
             eventContent={(arg) => {
-              const channelName = arg.event.extendedProps.channel as string
+              const itemChannels = arg.event.extendedProps.channels as string[]
+              const channelColors = arg.event.extendedProps.channelColors as string[]
+              const item = arg.event.extendedProps.item as MarketingItem
+
               return (
-                <div className="flex items-center gap-1.5 p-1 text-xs overflow-hidden w-full">
-                  <span className="flex-shrink-0 opacity-90">
-                    {getChannelIcon(channelName)}
+                <div className="flex flex-col gap-1 p-1.5 text-xs overflow-hidden w-full">
+                  {/* Title */}
+                  <span className="font-medium truncate text-white">
+                    {arg.event.title}
                   </span>
-                  <span className="font-medium truncate">{arg.event.title}</span>
+                  {/* Channel Tags + Status */}
+                  <div className="flex flex-wrap gap-1">
+                    {itemChannels.map((channelName, i) => (
+                      <span
+                        key={channelName}
+                        className="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                        style={{
+                          backgroundColor: channelColors[i],
+                          color: '#ffffff',
+                        }}
+                      >
+                        {channelMap[channelName]?.label || channelName}
+                      </span>
+                    ))}
+                    {item.status === 'completed' && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500 text-white">
+                        Yayınlandı
+                      </span>
+                    )}
+                    {item.status === 'in_progress' && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500 text-white">
+                        Devam Ediyor
+                      </span>
+                    )}
+                  </div>
                 </div>
               )
             }}
@@ -177,8 +275,14 @@ export function CalendarView() {
 
       <ItemFormDialog
         open={showDialog}
-        onOpenChange={setShowDialog}
+        onOpenChange={(open) => {
+          setShowDialog(open)
+          if (!open) {
+            setSelectedDate(null)
+          }
+        }}
         item={selectedItem}
+        defaultDate={selectedDate}
       />
     </div>
   )

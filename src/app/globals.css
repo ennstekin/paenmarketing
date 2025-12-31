@@ -178,3 +178,25 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #a3a3a3;
 }
+
+/* Calendar Day Cell Add Button */
+.fc .fc-daygrid-day-frame {
+  position: relative;
+}
+
+.fc .fc-daygrid-day-top {
+  position: relative;
+}
+
+.fc .fc-daygrid-day .add-content-btn {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.fc .fc-daygrid-day:hover .add-content-btn {
+  opacity: 1;
+}

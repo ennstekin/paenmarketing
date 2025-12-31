@@ -2,18 +2,24 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { MarketingItem, ChannelType, ItemStatus } from '@/types/database'
+import type { MarketingItem, ChannelType, ItemStatus, Priority, ContentType, Json } from '@/types/database'
 
 type CreateItemInput = {
   title: string
   description?: string | null
   channel: ChannelType
+  channels?: ChannelType[]
   status?: ItemStatus
   scheduled_date?: string | null
   scheduled_time?: string | null
   notes?: string | null
   target_audience?: string | null
   budget?: number | null
+  priority?: Priority
+  content_type?: ContentType | null
+  deadline?: string | null
+  campaign_id?: string | null
+  checklist?: Json
 }
 
 type UpdateItemInput = {
@@ -21,12 +27,18 @@ type UpdateItemInput = {
   title?: string
   description?: string | null
   channel?: ChannelType
+  channels?: ChannelType[]
   status?: ItemStatus
   scheduled_date?: string | null
   scheduled_time?: string | null
   notes?: string | null
   target_audience?: string | null
   budget?: number | null
+  priority?: Priority
+  content_type?: ContentType | null
+  deadline?: string | null
+  campaign_id?: string | null
+  checklist?: Json
 }
 
 export function useMarketingItems() {

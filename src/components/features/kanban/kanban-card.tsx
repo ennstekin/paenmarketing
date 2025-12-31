@@ -4,9 +4,11 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Trash2, Calendar, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { ChannelIcon } from '@/components/features/marketing-item/channel-icon'
 import { useChannelHelpers } from '@/hooks/use-channels'
 import { formatDate } from '@/lib/utils'
+import { PriorityBadge } from '@/components/features/priority/priority-badge'
+import { DeadlineIndicator } from '@/components/features/deadline/deadline-indicator'
+import { ChecklistPreview, type ChecklistItem } from '@/components/features/checklist/checklist-editor'
 import type { MarketingItem } from '@/types/database'
 
 interface KanbanCardProps {
@@ -16,7 +18,12 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ item, onEdit, onDelete }: KanbanCardProps) {
-  const { getChannelLabel, getChannelColor, getChannelIcon } = useChannelHelpers()
+  const { getChannelLabel, getChannelColor } = useChannelHelpers()
+
+  // Support both old single channel and new multiple channels
+  const itemChannels = (item as MarketingItem & { channels?: string[] }).channels ||
+    (item.channel ? [item.channel] : [])
+
   const {
     attributes,
     listeners,
@@ -31,6 +38,9 @@ export function KanbanCard({ item, onEdit, onDelete }: KanbanCardProps) {
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
+
+  // Use first channel color for the indicator
+  const primaryChannelColor = itemChannels.length > 0 ? getChannelColor(itemChannels[0]) : '#6b7280'
 
   return (
     <div
@@ -51,16 +61,21 @@ export function KanbanCard({ item, onEdit, onDelete }: KanbanCardProps) {
             className="cursor-pointer"
             onClick={() => onEdit(item)}
           >
-            {/* Channel Badge */}
-            <div className="mb-3">
-              <Badge
-                variant="channel"
-                color={getChannelColor(item.channel)}
-                className="inline-flex items-center gap-1.5 text-xs font-medium"
-              >
-                <ChannelIcon icon={getChannelIcon(item.channel)} className="h-3.5 w-3.5" />
-                {getChannelLabel(item.channel)}
-              </Badge>
+            {/* Channel Badges & Priority */}
+            <div className="mb-3 flex flex-wrap gap-1.5 items-center">
+              {itemChannels.map((channelName) => (
+                <Badge
+                  key={channelName}
+                  variant="channel"
+                  color={getChannelColor(channelName)}
+                  className="text-xs font-medium"
+                >
+                  {getChannelLabel(channelName)}
+                </Badge>
+              ))}
+              {item.priority && item.priority !== 'normal' && (
+                <PriorityBadge priority={item.priority} size="sm" showLabel={false} />
+              )}
             </div>
 
             {/* Title */}
@@ -75,18 +90,30 @@ export function KanbanCard({ item, onEdit, onDelete }: KanbanCardProps) {
               </p>
             )}
 
-            {/* Date/Time */}
-            {item.scheduled_date && (
-              <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center gap-3 text-xs text-neutral-400">
-                <span className="inline-flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {formatDate(item.scheduled_date)}
-                </span>
+            {/* Date/Time & Deadline */}
+            {(item.scheduled_date || item.deadline || (item.checklist && Array.isArray(item.checklist) && item.checklist.length > 0)) && (
+              <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center gap-3 text-xs text-neutral-400 flex-wrap">
+                {item.scheduled_date && (
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {formatDate(item.scheduled_date)}
+                  </span>
+                )}
                 {item.scheduled_time && (
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
                     {item.scheduled_time.slice(0, 5)}
                   </span>
+                )}
+                {item.deadline && (
+                  <DeadlineIndicator
+                    deadline={item.deadline}
+                    status={item.status}
+                    size="sm"
+                  />
+                )}
+                {item.checklist && Array.isArray(item.checklist) && item.checklist.length > 0 && (
+                  <ChecklistPreview items={item.checklist as unknown as ChecklistItem[]} />
                 )}
               </div>
             )}
@@ -105,10 +132,14 @@ export function KanbanCard({ item, onEdit, onDelete }: KanbanCardProps) {
         </button>
       </div>
 
-      {/* Channel Color Indicator */}
+      {/* Channel Color Indicator - shows gradient if multiple channels */}
       <div
         className="absolute left-0 top-4 bottom-4 w-1 rounded-full opacity-60"
-        style={{ backgroundColor: getChannelColor(item.channel) }}
+        style={{
+          background: itemChannels.length > 1
+            ? `linear-gradient(to bottom, ${itemChannels.map(c => getChannelColor(c)).join(', ')})`
+            : primaryChannelColor
+        }}
       />
     </div>
   )

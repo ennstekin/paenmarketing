@@ -1,10 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Bell, Search } from 'lucide-react'
+import { Plus, Bell, Search, X, Calendar, CheckCircle2, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ItemFormDialog } from '@/components/features/marketing-item/item-form-dialog'
+import { useMarketingItems } from '@/hooks/use-marketing-items'
+import type { MarketingItem } from '@/types/database'
+import { formatDate } from '@/lib/utils'
 
 interface HeaderProps {
   title: string
@@ -13,7 +17,14 @@ interface HeaderProps {
 export function Header({ title }: HeaderProps) {
   const [userName, setUserName] = useState<string>('')
   const [showItemForm, setShowItemForm] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedItem, setSelectedItem] = useState<MarketingItem | null>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const { data: items } = useMarketingItems()
 
   useEffect(() => {
     const getUser = async () => {
@@ -25,6 +36,42 @@ export function Header({ title }: HeaderProps) {
     getUser()
   }, [supabase])
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearch(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Filter items based on search query
+  const filteredItems = items?.filter(item =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  ).slice(0, 5) || []
+
+  // Get upcoming items (scheduled in next 7 days)
+  const today = new Date()
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const upcomingItems = items?.filter(item => {
+    if (!item.scheduled_date) return false
+    const itemDate = new Date(item.scheduled_date)
+    return itemDate >= today && itemDate <= nextWeek && item.status !== 'completed'
+  }).sort((a, b) => new Date(a.scheduled_date!).getTime() - new Date(b.scheduled_date!).getTime()).slice(0, 5) || []
+
+  const handleItemClick = (item: MarketingItem) => {
+    setSelectedItem(item)
+    setShowItemForm(true)
+    setShowSearch(false)
+    setShowNotifications(false)
+  }
+
   return (
     <>
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-neutral-100">
@@ -35,20 +82,136 @@ export function Header({ title }: HeaderProps) {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            {/* Search Button */}
-            <Button variant="ghost" size="icon" className="hidden sm:flex h-10 w-10 rounded-xl hover:bg-neutral-100">
-              <Search className="h-5 w-5 text-neutral-500" />
-            </Button>
+            {/* Search Button & Dropdown */}
+            <div className="relative" ref={searchRef}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden sm:flex h-10 w-10 rounded-xl hover:bg-neutral-100"
+                onClick={() => { setShowSearch(!showSearch); setShowNotifications(false); }}
+              >
+                <Search className="h-5 w-5 text-neutral-500" />
+              </Button>
 
-            {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-neutral-100">
-              <Bell className="h-5 w-5 text-neutral-500" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500" />
-            </Button>
+              {showSearch && (
+                <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-neutral-200 overflow-hidden">
+                  <div className="p-3 border-b border-neutral-100">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                      <Input
+                        placeholder="İçerik ara..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 pr-9 h-10"
+                        autoFocus
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2"
+                        >
+                          <X className="h-4 w-4 text-neutral-400 hover:text-neutral-600" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {searchQuery ? (
+                      filteredItems.length > 0 ? (
+                        filteredItems.map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => handleItemClick(item)}
+                            className="w-full px-4 py-3 text-left hover:bg-neutral-50 border-b border-neutral-50 last:border-0"
+                          >
+                            <p className="font-medium text-sm text-neutral-900 truncate">{item.title}</p>
+                            <p className="text-xs text-neutral-500 mt-0.5">
+                              {item.scheduled_date ? formatDate(item.scheduled_date) : 'Tarih belirlenmemiş'}
+                            </p>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-sm text-neutral-500">
+                          Sonuç bulunamadı
+                        </div>
+                      )
+                    ) : (
+                      <div className="p-4 text-center text-sm text-neutral-400">
+                        Aramak için yazmaya başlayın
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Notifications Button & Dropdown */}
+            <div className="relative" ref={notifRef}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-10 w-10 rounded-xl hover:bg-neutral-100"
+                onClick={() => { setShowNotifications(!showNotifications); setShowSearch(false); }}
+              >
+                <Bell className="h-5 w-5 text-neutral-500" />
+                {upcomingItems.length > 0 && (
+                  <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </Button>
+
+              {showNotifications && (
+                <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-neutral-200 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
+                    <h3 className="font-semibold text-sm text-neutral-900">Yaklaşan İçerikler</h3>
+                    <span className="text-xs text-neutral-500">{upcomingItems.length} içerik</span>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {upcomingItems.length > 0 ? (
+                      upcomingItems.map((item) => {
+                        const itemDate = new Date(item.scheduled_date!)
+                        const isToday = itemDate.toDateString() === today.toDateString()
+                        const isTomorrow = itemDate.toDateString() === new Date(today.getTime() + 24 * 60 * 60 * 1000).toDateString()
+
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => handleItemClick(item)}
+                            className="w-full px-4 py-3 text-left hover:bg-neutral-50 border-b border-neutral-50 last:border-0"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`mt-0.5 p-1.5 rounded-lg ${isToday ? 'bg-red-100' : isTomorrow ? 'bg-amber-100' : 'bg-neutral-100'}`}>
+                                {item.status === 'in_progress' ? (
+                                  <Clock className={`h-4 w-4 ${isToday ? 'text-red-600' : isTomorrow ? 'text-amber-600' : 'text-neutral-600'}`} />
+                                ) : (
+                                  <Calendar className={`h-4 w-4 ${isToday ? 'text-red-600' : isTomorrow ? 'text-amber-600' : 'text-neutral-600'}`} />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm text-neutral-900 truncate">{item.title}</p>
+                                <p className={`text-xs mt-0.5 ${isToday ? 'text-red-600 font-medium' : isTomorrow ? 'text-amber-600' : 'text-neutral-500'}`}>
+                                  {isToday ? 'Bugün' : isTomorrow ? 'Yarın' : formatDate(item.scheduled_date!)}
+                                  {item.scheduled_time && ` - ${item.scheduled_time.slice(0, 5)}`}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })
+                    ) : (
+                      <div className="p-6 text-center">
+                        <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                        <p className="text-sm text-neutral-600">Yaklaşan içerik yok</p>
+                        <p className="text-xs text-neutral-400 mt-1">Önümüzdeki 7 gün içinde planlanmış içerik bulunmuyor</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Add New Button */}
             <Button
-              onClick={() => setShowItemForm(true)}
+              onClick={() => { setShowItemForm(true); setSelectedItem(null); }}
               className="gap-2 h-10 px-4 rounded-xl bg-gradient-to-r from-neutral-900 to-neutral-800 hover:from-neutral-800 hover:to-neutral-700 shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="h-4 w-4" />
@@ -71,7 +234,7 @@ export function Header({ title }: HeaderProps) {
         </div>
       </header>
 
-      <ItemFormDialog open={showItemForm} onOpenChange={setShowItemForm} />
+      <ItemFormDialog open={showItemForm} onOpenChange={setShowItemForm} item={selectedItem} />
     </>
   )
 }
