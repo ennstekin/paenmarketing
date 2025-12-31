@@ -29,6 +29,8 @@ import { CampaignSelector } from '@/components/features/campaigns/campaign-selec
 import { ChecklistEditor, ChecklistPreview, type ChecklistItem } from '@/components/features/checklist/checklist-editor'
 import { ContentTypeSelect, ContentTypeBadge } from '@/components/features/content-type/content-type-badge'
 import { DeadlineIndicator } from '@/components/features/deadline/deadline-indicator'
+import { CommentSection } from '@/components/features/comments/comment-section'
+import { ApprovalSection } from '@/components/features/approval/approval-section'
 import {
   Trash2,
   Loader2,
@@ -47,7 +49,11 @@ import {
   Target,
   ListChecks,
   Folder,
+  MessageSquare,
+  ShieldCheck,
 } from 'lucide-react'
+import { useComments } from '@/hooks/use-comments'
+import { useApprovalRequests } from '@/hooks/use-approvals'
 import type { MarketingItem, ChannelType, ItemStatus, Priority, ContentType } from '@/types/database'
 import { statusLabels } from '@/lib/utils'
 
@@ -114,7 +120,11 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
   const uploadAttachment = useUploadAttachment()
   const deleteAttachment = useDeleteAttachment()
 
-  const [activeTab, setActiveTab] = useState<'details' | 'settings' | 'media'>('details')
+  const [activeTab, setActiveTab] = useState<'details' | 'settings' | 'media' | 'comments' | 'approvals'>('details')
+
+  // Fetch comments and approvals count for badge display
+  const { data: comments } = useComments(item?.id || '')
+  const { data: approvals } = useApprovalRequests(item?.id || '')
   const [isDragging, setIsDragging] = useState(false)
   const isEditing = !!item
 
@@ -323,17 +333,43 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
               Ayarlar
             </button>
             {isEditing && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('media')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeTab === 'media'
-                    ? 'bg-white text-neutral-900 shadow-sm'
-                    : 'text-neutral-600 hover:text-neutral-900'
-                }`}
-              >
-                Medya ({attachments?.length || 0})
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('media')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === 'media'
+                      ? 'bg-white text-neutral-900 shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  Medya ({attachments?.length || 0})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('comments')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                    activeTab === 'comments'
+                      ? 'bg-white text-neutral-900 shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Yorumlar {comments && comments.length > 0 && `(${comments.length})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('approvals')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                    activeTab === 'approvals'
+                      ? 'bg-white text-neutral-900 shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Onaylar {approvals && approvals.length > 0 && `(${approvals.length})`}
+                </button>
+              </>
             )}
           </div>
         </DialogHeader>
@@ -650,7 +686,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                 </div>
               </div>
             </form>
-          ) : (
+          ) : activeTab === 'media' ? (
             /* Media Tab */
             <div className="space-y-4">
               {/* Upload Area */}
@@ -764,7 +800,31 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                 </div>
               )}
             </div>
-          )}
+          ) : activeTab === 'comments' ? (
+            /* Comments Tab */
+            <div className="space-y-4">
+              {item?.id ? (
+                <CommentSection marketingItemId={item.id} />
+              ) : (
+                <div className="text-center py-8 text-neutral-400">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">Yorum eklemek için önce içeriği kaydedin</p>
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'approvals' ? (
+            /* Approvals Tab */
+            <div className="space-y-4">
+              {item?.id ? (
+                <ApprovalSection marketingItemId={item.id} />
+              ) : (
+                <div className="text-center py-8 text-neutral-400">
+                  <ShieldCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">Onay isteği göndermek için önce içeriği kaydedin</p>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
 
         {/* Footer */}
