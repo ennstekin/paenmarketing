@@ -9,6 +9,7 @@ type CreateUserInput = {
   password: string
   full_name?: string
   role: UserRole
+  must_change_password?: boolean
 }
 
 type UpdateUserInput = {
@@ -127,7 +128,9 @@ export function useCreateUser() {
         .from('profiles')
         .update({
           role: input.role,
-          full_name: input.full_name
+          full_name: input.full_name,
+          must_change_password: input.must_change_password ?? true,
+          temp_password_hint: input.password, // Store hint for admin to see
         } as never)
         .eq('id', authData.user.id)
 
@@ -136,6 +139,29 @@ export function useCreateUser() {
       return authData.user
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
+
+export function useClearPasswordChangeFlag() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          must_change_password: false,
+          temp_password_hint: null,
+        } as never)
+        .eq('id', userId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['current-user'] })
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
   })

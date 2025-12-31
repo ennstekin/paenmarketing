@@ -55,7 +55,13 @@ import {
   Tv,
   Globe,
   Phone,
+  Key,
+  Copy,
+  Eye,
+  EyeOff,
+  RefreshCw,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAllChannels, useCreateChannel, useUpdateChannel, useDeleteChannel } from '@/hooks/use-channels'
 import type { Channel } from '@/types/database'
 import { formatDistanceToNow } from 'date-fns'
@@ -574,6 +580,16 @@ function ProfileTab() {
   )
 }
 
+// Generate random password
+function generatePassword(length = 8): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let password = ''
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return password
+}
+
 // Users Tab
 function UsersTab() {
   const { data: users, isLoading } = useUsers()
@@ -587,6 +603,8 @@ function UsersTab() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [editingUser, setEditingUser] = useState<Profile | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [createdUserInfo, setCreatedUserInfo] = useState<{ email: string; password: string } | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -596,9 +614,17 @@ function UsersTab() {
   const [formError, setFormError] = useState('')
 
   const resetForm = () => {
-    setFormData({ email: '', password: '', full_name: '', role: 'viewer' })
+    setFormData({ email: '', password: generatePassword(), full_name: '', role: 'viewer' })
     setFormError('')
+    setShowPassword(false)
   }
+
+  // Initialize password when dialog opens
+  useEffect(() => {
+    if (showAddDialog) {
+      setFormData(prev => ({ ...prev, password: generatePassword() }))
+    }
+  }, [showAddDialog])
 
   const handleAddUser = async () => {
     setFormError('')
@@ -616,12 +642,20 @@ function UsersTab() {
         password: formData.password,
         full_name: formData.full_name || undefined,
         role: formData.role,
+        must_change_password: true,
       })
+      // Show success with credentials
+      setCreatedUserInfo({ email: formData.email, password: formData.password })
       setShowAddDialog(false)
       resetForm()
     } catch (error: any) {
       setFormError(error.message || 'Kullanıcı oluşturulurken hata oluştu')
     }
+  }
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success(`${label} kopyalandı`)
   }
 
   const handleEditUser = async () => {
@@ -714,6 +748,7 @@ function UsersTab() {
                   <th className="text-left py-3 px-4 font-medium text-neutral-600">Kullanıcı</th>
                   <th className="text-left py-3 px-4 font-medium text-neutral-600">Rol</th>
                   <th className="text-left py-3 px-4 font-medium text-neutral-600">Durum</th>
+                  <th className="text-left py-3 px-4 font-medium text-neutral-600">Şifre</th>
                   <th className="text-right py-3 px-4 font-medium text-neutral-600">İşlemler</th>
                 </tr>
               </thead>
@@ -760,6 +795,27 @@ function UsersTab() {
                       </Badge>
                     </td>
                     <td className="py-3 px-4">
+                      {user.must_change_password ? (
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-amber-100 text-amber-800">
+                            <Key className="h-3 w-3 mr-1" />
+                            Geçici
+                          </Badge>
+                          {user.temp_password_hint && (
+                            <button
+                              onClick={() => copyToClipboard(user.temp_password_hint!, 'Geçici şifre')}
+                              className="text-xs text-neutral-500 hover:text-neutral-700 flex items-center gap-1"
+                              title="Şifreyi kopyala"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-neutral-400">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
                       <div className="flex items-center justify-end gap-1">
                         {user.id !== currentUser?.id && (
                           <>
@@ -803,21 +859,60 @@ function UsersTab() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="kullanici@ornek.com"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Şifre *</label>
-              <Input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Key className="h-4 w-4 text-amber-500" />
+                Geçici Şifre *
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setFormData({ ...formData, password: generatePassword() })}
+                  title="Yeni şifre oluştur"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => copyToClipboard(formData.password, 'Şifre')}
+                  title="Şifreyi kopyala"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-amber-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                Kullanıcı ilk girişte bu şifreyi değiştirmek zorunda kalacak
+              </p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Ad Soyad</label>
               <Input
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                placeholder="Ahmet Yılmaz"
               />
             </div>
             <div className="space-y-2">
@@ -837,6 +932,52 @@ function UsersTab() {
                 {createUser.isPending ? 'Ekleniyor...' : 'Ekle'}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Created User Info Dialog */}
+      <Dialog open={!!createdUserInfo} onOpenChange={() => setCreatedUserInfo(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <Check className="h-5 w-5" />
+              Kullanıcı Oluşturuldu
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-neutral-600">
+              Aşağıdaki bilgileri kullanıcıyla paylaşın. Kullanıcı ilk girişte şifresini değiştirmek zorunda kalacak.
+            </p>
+            <div className="p-4 bg-neutral-50 rounded-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-neutral-500">E-posta:</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm">{createdUserInfo?.email}</span>
+                  <button
+                    onClick={() => copyToClipboard(createdUserInfo?.email || '', 'E-posta')}
+                    className="text-neutral-400 hover:text-neutral-600"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-neutral-500">Geçici Şifre:</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm bg-amber-100 px-2 py-0.5 rounded">{createdUserInfo?.password}</span>
+                  <button
+                    onClick={() => copyToClipboard(createdUserInfo?.password || '', 'Şifre')}
+                    className="text-neutral-400 hover:text-neutral-600"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <Button onClick={() => setCreatedUserInfo(null)} className="w-full">
+              Tamam
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

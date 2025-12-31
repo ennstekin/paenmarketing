@@ -25,6 +25,8 @@ export interface Database {
           avatar_url: string | null
           role: UserRole
           is_active: boolean
+          must_change_password: boolean
+          temp_password_hint: string | null
           last_login_at: string | null
           created_at: string
           updated_at: string
@@ -36,6 +38,8 @@ export interface Database {
           avatar_url?: string | null
           role?: UserRole
           is_active?: boolean
+          must_change_password?: boolean
+          temp_password_hint?: string | null
           last_login_at?: string | null
           created_at?: string
           updated_at?: string
@@ -47,6 +51,8 @@ export interface Database {
           avatar_url?: string | null
           role?: UserRole
           is_active?: boolean
+          must_change_password?: boolean
+          temp_password_hint?: string | null
           last_login_at?: string | null
           created_at?: string
           updated_at?: string
