@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge'
 import { useCreateMarketingItem, useUpdateMarketingItem, useDeleteMarketingItem } from '@/hooks/use-marketing-items'
 import { useChannels } from '@/hooks/use-channels'
 import { useAttachments, useUploadAttachment, useDeleteAttachment } from '@/hooks/use-attachments'
+import { useUsers } from '@/hooks/use-users'
 import { PriorityBadge, PrioritySelect } from '@/components/features/priority/priority-badge'
 import { CampaignSelector } from '@/components/features/campaigns/campaign-selector'
 import { ChecklistEditor, ChecklistPreview, type ChecklistItem } from '@/components/features/checklist/checklist-editor'
@@ -31,6 +32,7 @@ import { ContentTypeSelect, ContentTypeBadge } from '@/components/features/conte
 import { DeadlineIndicator } from '@/components/features/deadline/deadline-indicator'
 import { CommentSection } from '@/components/features/comments/comment-section'
 import { ApprovalSection } from '@/components/features/approval/approval-section'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Trash2,
   Loader2,
@@ -51,6 +53,7 @@ import {
   Folder,
   MessageSquare,
   ShieldCheck,
+  User,
 } from 'lucide-react'
 import { useComments } from '@/hooks/use-comments'
 import { useApprovalRequests } from '@/hooks/use-approvals'
@@ -75,6 +78,7 @@ const formSchema = z.object({
     text: z.string(),
     completed: z.boolean(),
   })).optional(),
+  assigned_to: z.string().nullable().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -116,6 +120,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
   const updateItem = useUpdateMarketingItem()
   const deleteItem = useDeleteMarketingItem()
   const { data: channels, isLoading: channelsLoading } = useChannels()
+  const { data: users } = useUsers()
   const { data: attachments } = useAttachments(item?.id)
   const uploadAttachment = useUploadAttachment()
   const deleteAttachment = useDeleteAttachment()
@@ -160,6 +165,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
       deadline: '',
       campaign_id: null,
       checklist: [],
+      assigned_to: null,
     },
   })
 
@@ -205,6 +211,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
         deadline: item.deadline || '',
         campaign_id: item.campaign_id || null,
         checklist: parsedChecklist,
+        assigned_to: item.assigned_to || null,
       })
     } else if (channels && channels.length > 0) {
       reset({
@@ -221,6 +228,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
         deadline: '',
         campaign_id: null,
         checklist: [],
+        assigned_to: null,
       })
     }
     setActiveTab('details')
@@ -242,6 +250,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
       deadline: data.deadline || null,
       campaign_id: data.campaign_id || null,
       checklist: data.checklist || [],
+      assigned_to: data.assigned_to || null,
     }
 
     if (isEditing && item) {
@@ -648,6 +657,56 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                       type="date"
                       {...register('deadline')}
                       className="h-11"
+                    />
+                  </div>
+
+                  {/* Assigned To */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                      <User className="h-4 w-4 text-neutral-400" />
+                      Sorumlu Kişi
+                    </label>
+                    <Controller
+                      name="assigned_to"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value || ''}
+                          onValueChange={(v) => field.onChange(v || null)}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Kişi seç...">
+                              {field.value && users?.find(u => u.id === field.value) && (
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-5 w-5">
+                                    <AvatarImage src={users.find(u => u.id === field.value)?.avatar_url || undefined} />
+                                    <AvatarFallback className="text-[10px]">
+                                      {users.find(u => u.id === field.value)?.full_name?.[0] || users.find(u => u.id === field.value)?.email?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span>{users.find(u => u.id === field.value)?.full_name || users.find(u => u.id === field.value)?.email}</span>
+                                </div>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Atanmamış</SelectItem>
+                            {users?.filter(u => u.is_active).map((user) => (
+                              <SelectItem key={user.id} value={user.id}>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-5 w-5">
+                                    <AvatarImage src={user.avatar_url || undefined} />
+                                    <AvatarFallback className="text-[10px]">
+                                      {user.full_name?.[0] || user.email?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span>{user.full_name || user.email}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     />
                   </div>
                 </div>

@@ -20,6 +20,9 @@ type CreateItemInput = {
   deadline?: string | null
   campaign_id?: string | null
   checklist?: Json
+  assigned_to?: string | null
+  assigned_by?: string | null
+  is_idea?: boolean
 }
 
 type UpdateItemInput = {
@@ -39,6 +42,9 @@ type UpdateItemInput = {
   deadline?: string | null
   campaign_id?: string | null
   checklist?: Json
+  assigned_to?: string | null
+  assigned_by?: string | null
+  is_idea?: boolean
 }
 
 export function useMarketingItems() {
@@ -50,6 +56,7 @@ export function useMarketingItems() {
       const { data, error } = await supabase
         .from('marketing_items')
         .select('*')
+        .or('is_idea.is.null,is_idea.eq.false')
         .order('scheduled_date', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false })
 
@@ -209,6 +216,109 @@ export function useStats() {
         completionRate,
         upcoming,
       }
+    },
+  })
+}
+
+// Ideas Pool hooks
+export function useIdeas() {
+  const supabase = createClient()
+
+  return useQuery({
+    queryKey: ['ideas'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .select('*')
+        .eq('is_idea', true)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data as MarketingItem[]
+    },
+  })
+}
+
+export function useCreateIdea() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async (input: { title: string; description?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .insert({
+          title: input.title,
+          description: input.description || null,
+          user_id: user.id,
+          is_idea: true,
+          channel: 'other', // default channel for ideas
+          channels: [],
+          status: 'planned',
+        } as never)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as MarketingItem
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ideas'] })
+    },
+  })
+}
+
+export function useMoveIdeaToCalendar() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async ({ id, scheduled_date, scheduled_time }: {
+      id: string
+      scheduled_date: string
+      scheduled_time?: string
+    }) => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .update({
+          is_idea: false,
+          scheduled_date,
+          scheduled_time: scheduled_time || null,
+          status: 'planned'
+        } as never)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as MarketingItem
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ideas'] })
+      queryClient.invalidateQueries({ queryKey: ['marketing-items'] })
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
+    },
+  })
+}
+
+export function useDeleteIdea() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('marketing_items')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ideas'] })
     },
   })
 }

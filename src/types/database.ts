@@ -144,6 +144,7 @@ export interface Database {
           deadline: string | null
           campaign_id: string | null
           checklist: Json
+          is_idea: boolean
           created_at: string
           updated_at: string
         }
@@ -168,6 +169,7 @@ export interface Database {
           deadline?: string | null
           campaign_id?: string | null
           checklist?: Json
+          is_idea?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -192,6 +194,7 @@ export interface Database {
           deadline?: string | null
           campaign_id?: string | null
           checklist?: Json
+          is_idea?: boolean
           created_at?: string
           updated_at?: string
         }

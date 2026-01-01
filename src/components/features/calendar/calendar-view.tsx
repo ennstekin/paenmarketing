@@ -9,8 +9,10 @@ import type { DateClickArg } from '@fullcalendar/interaction'
 import type { EventClickArg, EventDropArg, DayCellMountArg } from '@fullcalendar/core'
 import { useMarketingItems, useUpdateMarketingItem } from '@/hooks/use-marketing-items'
 import { useChannels } from '@/hooks/use-channels'
+import { useUsers } from '@/hooks/use-users'
 import { ItemFormDialog } from '@/components/features/marketing-item/item-form-dialog'
 import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { CalendarDays, Mail, MessageSquare, Megaphone, Instagram, Send, Radio, Tv, Globe, Phone } from 'lucide-react'
 import type { MarketingItem } from '@/types/database'
 
@@ -29,10 +31,19 @@ const iconComponents: Record<string, React.ComponentType<{ className?: string }>
 export function CalendarView() {
   const { data: items, isLoading } = useMarketingItems()
   const { data: channels } = useChannels()
+  const { data: users } = useUsers()
   const updateItem = useUpdateMarketingItem()
   const [selectedItem, setSelectedItem] = useState<MarketingItem | null>(null)
   const [showDialog, setShowDialog] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+
+  // Create user lookup map
+  const userMap = useMemo(() => {
+    return users?.reduce((acc, u) => {
+      acc[u.id] = u
+      return acc
+    }, {} as Record<string, typeof users[0]>) || {}
+  }, [users])
 
   // Create channel lookup map
   const channelMap = useMemo(() => {
@@ -234,13 +245,24 @@ export function CalendarView() {
               const itemChannels = arg.event.extendedProps.channels as string[]
               const channelColors = arg.event.extendedProps.channelColors as string[]
               const item = arg.event.extendedProps.item as MarketingItem
+              const assignedUser = item.assigned_to ? userMap[item.assigned_to] : null
 
               return (
                 <div className="flex flex-col gap-1 p-1.5 text-xs overflow-hidden w-full">
-                  {/* Title */}
-                  <span className="font-medium truncate text-white">
-                    {arg.event.title}
-                  </span>
+                  {/* Title + Assigned User */}
+                  <div className="flex items-center gap-1.5">
+                    {assignedUser && (
+                      <Avatar className="h-4 w-4 flex-shrink-0 ring-1 ring-white/30">
+                        <AvatarImage src={assignedUser.avatar_url || undefined} />
+                        <AvatarFallback className="text-[8px] bg-white/20 text-white">
+                          {assignedUser.full_name?.[0] || assignedUser.email?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    <span className="font-medium truncate text-white">
+                      {arg.event.title}
+                    </span>
+                  </div>
                   {/* Channel Tags + Status */}
                   <div className="flex flex-wrap gap-1">
                     {itemChannels.map((channelName, i) => (
