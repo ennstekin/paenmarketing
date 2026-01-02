@@ -228,243 +228,242 @@ export function IdeaFormDialog({ open, onOpenChange, idea }: IdeaFormDialogProps
           </div>
         </DialogHeader>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          {activeTab === 'details' ? (
-            <form id="idea-form" onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - Main Content */}
-                <div className="space-y-5">
-                  {/* Title */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">Başlık *</label>
-                    <Input
-                      {...register('title')}
-                      placeholder="Fikir başlığını girin..."
-                      className="h-12 text-base"
-                    />
-                    {errors.title && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.title.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">Açıklama</label>
-                    <Textarea
-                      {...register('description')}
-                      placeholder="Fikir açıklaması..."
-                      className="min-h-[140px] resize-none"
-                    />
-                  </div>
-
-                  {/* URL */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <Link className="h-4 w-4 text-neutral-400" />
-                      Referans URL / Link
-                    </label>
-                    <Input
-                      {...register('url')}
-                      placeholder="https://..."
-                      className="h-11"
-                    />
-                    {errors.url && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.url.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Notes */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">Notlar</label>
-                    <Textarea
-                      {...register('notes')}
-                      placeholder="Ek notlar, ilham kaynakları..."
-                      className="min-h-[100px] resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Right Column - Channels */}
-                <div className="space-y-5">
-                  {/* Channels - Multi Select */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">Kanallar (Opsiyonel)</label>
-                    {channelsLoading ? (
-                      <div className="flex items-center gap-2 h-11 px-3 border rounded-lg bg-neutral-50">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-sm text-neutral-500">Yükleniyor...</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-white min-h-[44px]">
-                        {channels?.map((channel) => {
-                          const isSelected = watchedChannels?.includes(channel.name)
-                          return (
-                            <button
-                              key={channel.name}
-                              type="button"
-                              onClick={() => toggleChannel(channel.name)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                                isSelected
-                                  ? 'text-white shadow-sm'
-                                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                              }`}
-                              style={isSelected ? { backgroundColor: channel.color } : {}}
-                            >
-                              <div
-                                className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white/50' : ''}`}
-                                style={!isSelected ? { backgroundColor: channel.color } : {}}
-                              />
-                              {channel.label}
-                              {isSelected && <X className="h-3 w-3 ml-0.5" />}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info Box */}
-                  <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
-                    <div className="flex items-center gap-2 text-sm font-medium text-amber-700 mb-2">
-                      <Lightbulb className="h-4 w-4" />
-                      Fikirler Havuzu
-                    </div>
-                    <p className="text-xs text-amber-600">
-                      Bu fikir, takvime eklenene kadar fikirler havuzunda bekleyecektir.
-                      İstediğiniz zaman takvime taşıyabilirsiniz.
+        {/* Content - Single Form */}
+        <form id="idea-form" onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5">
+          {/* Details Tab */}
+          <div className={activeTab === 'details' ? 'block' : 'hidden'}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Main Content */}
+              <div className="space-y-5">
+                {/* Title */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700">Başlık *</label>
+                  <Input
+                    {...register('title')}
+                    placeholder="Fikir başlığını girin..."
+                    className="h-12 text-base"
+                  />
+                  {errors.title && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.title.message}
                     </p>
-                  </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700">Açıklama</label>
+                  <Textarea
+                    {...register('description')}
+                    placeholder="Fikir açıklaması..."
+                    className="min-h-[140px] resize-none"
+                  />
+                </div>
+
+                {/* URL */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                    <Link className="h-4 w-4 text-neutral-400" />
+                    Referans URL / Link
+                  </label>
+                  <Input
+                    {...register('url')}
+                    placeholder="https://..."
+                    className="h-11"
+                  />
+                  {errors.url && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.url.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700">Notlar</label>
+                  <Textarea
+                    {...register('notes')}
+                    placeholder="Ek notlar, ilham kaynakları..."
+                    className="min-h-[100px] resize-none"
+                  />
                 </div>
               </div>
-            </form>
-          ) : (
-            /* Settings Tab */
-            <form id="idea-form" onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - Priority, Content Type */}
-                <div className="space-y-5">
-                  {/* Priority */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <Flag className="h-4 w-4 text-neutral-400" />
-                      Öncelik
-                    </label>
-                    <Controller
-                      name="priority"
-                      control={control}
-                      render={({ field }) => (
-                        <PrioritySelect
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                  </div>
 
-                  {/* Content Type */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <Target className="h-4 w-4 text-neutral-400" />
-                      İçerik Tipi
-                    </label>
-                    <Controller
-                      name="content_type"
-                      control={control}
-                      render={({ field }) => (
-                        <ContentTypeSelect
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  {/* Assigned To */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <User className="h-4 w-4 text-neutral-400" />
-                      Sorumlu Kişi
-                    </label>
-                    <Controller
-                      name="assigned_to"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          value={field.value || ''}
-                          onValueChange={(v) => field.onChange(v || null)}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Kişi seç...">
-                              {field.value && users?.find(u => u.id === field.value) && (
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage src={users.find(u => u.id === field.value)?.avatar_url || undefined} />
-                                    <AvatarFallback className="text-[10px]">
-                                      {users.find(u => u.id === field.value)?.full_name?.[0] || users.find(u => u.id === field.value)?.email?.[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span>{users.find(u => u.id === field.value)?.full_name || users.find(u => u.id === field.value)?.email}</span>
-                                </div>
-                              )}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Atanmamış</SelectItem>
-                            {users?.filter(u => u.is_active).map((user) => (
-                              <SelectItem key={user.id} value={user.id}>
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage src={user.avatar_url || undefined} />
-                                    <AvatarFallback className="text-[10px]">
-                                      {user.full_name?.[0] || user.email?.[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span>{user.full_name || user.email}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
+              {/* Right Column - Channels */}
+              <div className="space-y-5">
+                {/* Channels - Multi Select */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700">Kanallar (Opsiyonel)</label>
+                  {channelsLoading ? (
+                    <div className="flex items-center gap-2 h-11 px-3 border rounded-lg bg-neutral-50">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-neutral-500">Yükleniyor...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-white min-h-[44px]">
+                      {channels?.map((channel) => {
+                        const isSelected = watchedChannels?.includes(channel.name)
+                        return (
+                          <button
+                            key={channel.name}
+                            type="button"
+                            onClick={() => toggleChannel(channel.name)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                              isSelected
+                                ? 'text-white shadow-sm'
+                                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                            }`}
+                            style={isSelected ? { backgroundColor: channel.color } : {}}
+                          >
+                            <div
+                              className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white/50' : ''}`}
+                              style={!isSelected ? { backgroundColor: channel.color } : {}}
+                            />
+                            {channel.label}
+                            {isSelected && <X className="h-3 w-3 ml-0.5" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
 
-                {/* Right Column - Tips */}
-                <div className="space-y-5">
-                  <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100 space-y-3">
-                    <div className="text-sm font-medium text-neutral-700">Fikir İpuçları</div>
-                    <ul className="text-xs text-neutral-600 space-y-2">
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-500">•</span>
-                        Fikirlerinizi detaylı açıklayın, böylece daha sonra kolayca hatırlarsınız.
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-500">•</span>
-                        Referans linkleri ekleyerek ilham kaynaklarınızı kaydedin.
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-500">•</span>
-                        Kanal seçimi yaparak fikrin hangi platformda uygulanacağını belirleyin.
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-500">•</span>
-                        Öncelik belirleyerek önemli fikirleri ön plana çıkarın.
-                      </li>
-                    </ul>
+                {/* Info Box */}
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                  <div className="flex items-center gap-2 text-sm font-medium text-amber-700 mb-2">
+                    <Lightbulb className="h-4 w-4" />
+                    Fikirler Havuzu
                   </div>
+                  <p className="text-xs text-amber-600">
+                    Bu fikir, takvime eklenene kadar fikirler havuzunda bekleyecektir.
+                    İstediğiniz zaman takvime taşıyabilirsiniz.
+                  </p>
                 </div>
               </div>
-            </form>
-          )}
-        </div>
+            </div>
+          </div>
+
+          {/* Settings Tab */}
+          <div className={activeTab === 'settings' ? 'block' : 'hidden'}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Priority, Content Type */}
+              <div className="space-y-5">
+                {/* Priority */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                    <Flag className="h-4 w-4 text-neutral-400" />
+                    Öncelik
+                  </label>
+                  <Controller
+                    name="priority"
+                    control={control}
+                    render={({ field }) => (
+                      <PrioritySelect
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* Content Type */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                    <Target className="h-4 w-4 text-neutral-400" />
+                    İçerik Tipi
+                  </label>
+                  <Controller
+                    name="content_type"
+                    control={control}
+                    render={({ field }) => (
+                      <ContentTypeSelect
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* Assigned To */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                    <User className="h-4 w-4 text-neutral-400" />
+                    Sorumlu Kişi
+                  </label>
+                  <Controller
+                    name="assigned_to"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || ''}
+                        onValueChange={(v) => field.onChange(v || null)}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Kişi seç...">
+                            {field.value && users?.find(u => u.id === field.value) && (
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={users.find(u => u.id === field.value)?.avatar_url || undefined} />
+                                  <AvatarFallback className="text-[10px]">
+                                    {users.find(u => u.id === field.value)?.full_name?.[0] || users.find(u => u.id === field.value)?.email?.[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span>{users.find(u => u.id === field.value)?.full_name || users.find(u => u.id === field.value)?.email}</span>
+                              </div>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Atanmamış</SelectItem>
+                          {users?.filter(u => u.is_active).map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={user.avatar_url || undefined} />
+                                  <AvatarFallback className="text-[10px]">
+                                    {user.full_name?.[0] || user.email?.[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span>{user.full_name || user.email}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Right Column - Tips */}
+              <div className="space-y-5">
+                <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100 space-y-3">
+                  <div className="text-sm font-medium text-neutral-700">Fikir İpuçları</div>
+                  <ul className="text-xs text-neutral-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500">•</span>
+                      Fikirlerinizi detaylı açıklayın, böylece daha sonra kolayca hatırlarsınız.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500">•</span>
+                      Referans linkleri ekleyerek ilham kaynaklarınızı kaydedin.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500">•</span>
+                      Kanal seçimi yaparak fikrin hangi platformda uygulanacağını belirleyin.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500">•</span>
+                      Öncelik belirleyerek önemli fikirleri ön plana çıkarın.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t bg-neutral-50 flex items-center justify-between">
