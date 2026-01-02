@@ -691,7 +691,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Atanmamış</SelectItem>
-                            {users?.filter(u => u.is_active).map((user) => (
+                            {users?.filter(u => u.is_active !== false).map((user) => (
                               <SelectItem key={user.id} value={user.id}>
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-5 w-5">
