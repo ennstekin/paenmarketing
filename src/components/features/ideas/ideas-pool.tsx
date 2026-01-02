@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Lightbulb, Plus, Calendar, MoreHorizontal, Trash2, Edit, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
@@ -18,7 +17,8 @@ import {
 } from '@/components/ui/popover'
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useIdeas, useCreateIdea, useMoveIdeaToCalendar, useDeleteIdea } from '@/hooks/use-marketing-items'
+import { IdeaFormDialog } from './idea-form-dialog'
+import { useIdeas, useMoveIdeaToCalendar, useDeleteIdea } from '@/hooks/use-marketing-items'
 import { useUsers } from '@/hooks/use-users'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -26,26 +26,22 @@ import { tr } from 'date-fns/locale'
 import type { MarketingItem } from '@/types/database'
 
 export function IdeasPool() {
-  const [newIdeaTitle, setNewIdeaTitle] = useState('')
-  const [isAdding, setIsAdding] = useState(false)
+  const [showFormDialog, setShowFormDialog] = useState(false)
+  const [selectedIdea, setSelectedIdea] = useState<MarketingItem | null>(null)
 
   const { data: ideas, isLoading } = useIdeas()
   const { data: users } = useUsers()
-  const createIdea = useCreateIdea()
   const moveToCalendar = useMoveIdeaToCalendar()
   const deleteIdea = useDeleteIdea()
 
-  const handleAddIdea = async () => {
-    if (!newIdeaTitle.trim()) return
+  const handleNewIdea = () => {
+    setSelectedIdea(null)
+    setShowFormDialog(true)
+  }
 
-    try {
-      await createIdea.mutateAsync({ title: newIdeaTitle.trim() })
-      setNewIdeaTitle('')
-      setIsAdding(false)
-      toast.success('Fikir eklendi')
-    } catch {
-      toast.error('Fikir eklenemedi')
-    }
+  const handleEditIdea = (idea: MarketingItem) => {
+    setSelectedIdea(idea)
+    setShowFormDialog(true)
   }
 
   const handleMoveToCalendar = async (idea: MarketingItem, date: Date) => {
@@ -84,7 +80,7 @@ export function IdeasPool() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsAdding(true)}
+            onClick={handleNewIdea}
             className="gap-1"
           >
             <Plus className="h-4 w-4" />
@@ -93,44 +89,6 @@ export function IdeasPool() {
         </div>
       </CardHeader>
       <CardContent>
-        {/* Quick Add Input */}
-        {isAdding && (
-          <div className="flex gap-2 mb-4">
-            <Input
-              placeholder="Fikir başlığı..."
-              value={newIdeaTitle}
-              onChange={(e) => setNewIdeaTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleAddIdea()
-                if (e.key === 'Escape') {
-                  setIsAdding(false)
-                  setNewIdeaTitle('')
-                }
-              }}
-              autoFocus
-            />
-            <Button
-              onClick={handleAddIdea}
-              disabled={!newIdeaTitle.trim() || createIdea.isPending}
-            >
-              {createIdea.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Ekle'
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIsAdding(false)
-                setNewIdeaTitle('')
-              }}
-            >
-              İptal
-            </Button>
-          </div>
-        )}
-
         {/* Ideas Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -146,6 +104,7 @@ export function IdeasPool() {
                   idea={idea}
                   creator={creator}
                   onMoveToCalendar={handleMoveToCalendar}
+                  onEdit={handleEditIdea}
                   onDelete={handleDelete}
                   isMoving={moveToCalendar.isPending}
                 />
@@ -160,6 +119,13 @@ export function IdeasPool() {
           </div>
         )}
       </CardContent>
+
+      {/* Idea Form Dialog */}
+      <IdeaFormDialog
+        open={showFormDialog}
+        onOpenChange={setShowFormDialog}
+        idea={selectedIdea}
+      />
     </Card>
   )
 }
@@ -168,11 +134,12 @@ interface IdeaCardProps {
   idea: MarketingItem
   creator?: { full_name: string | null; avatar_url: string | null; email: string }
   onMoveToCalendar: (idea: MarketingItem, date: Date) => void
+  onEdit: (idea: MarketingItem) => void
   onDelete: (id: string) => void
   isMoving: boolean
 }
 
-function IdeaCard({ idea, creator, onMoveToCalendar, onDelete, isMoving }: IdeaCardProps) {
+function IdeaCard({ idea, creator, onMoveToCalendar, onEdit, onDelete, isMoving }: IdeaCardProps) {
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>()
 
@@ -248,7 +215,7 @@ function IdeaCard({ idea, creator, onMoveToCalendar, onDelete, isMoving }: IdeaC
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem onClick={() => onEdit(idea)}>
             <Edit className="h-4 w-4 mr-2" />
             Düzenle
           </DropdownMenuItem>

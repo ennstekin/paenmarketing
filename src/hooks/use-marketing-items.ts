@@ -25,6 +25,18 @@ type CreateItemInput = {
   is_idea?: boolean
 }
 
+type CreateIdeaInput = {
+  title: string
+  description?: string | null
+  channel?: ChannelType
+  channels?: ChannelType[]
+  notes?: string | null
+  url?: string | null
+  priority?: Priority
+  content_type?: ContentType | null
+  assigned_to?: string | null
+}
+
 type UpdateItemInput = {
   id: string
   title?: string
@@ -35,6 +47,7 @@ type UpdateItemInput = {
   scheduled_date?: string | null
   scheduled_time?: string | null
   notes?: string | null
+  url?: string | null
   target_audience?: string | null
   budget?: number | null
   priority?: Priority
@@ -244,7 +257,7 @@ export function useCreateIdea() {
   const supabase = createClient()
 
   return useMutation({
-    mutationFn: async (input: { title: string; description?: string }) => {
+    mutationFn: async (input: CreateIdeaInput) => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
@@ -253,10 +266,15 @@ export function useCreateIdea() {
         .insert({
           title: input.title,
           description: input.description || null,
+          notes: input.notes || null,
+          url: input.url || null,
+          priority: input.priority || 'normal',
+          content_type: input.content_type || null,
+          assigned_to: input.assigned_to || null,
           user_id: user.id,
           is_idea: true,
-          channel: 'other', // default channel for ideas
-          channels: [],
+          channel: input.channel || 'other',
+          channels: input.channels || [],
           status: 'planned',
         } as never)
         .select()
