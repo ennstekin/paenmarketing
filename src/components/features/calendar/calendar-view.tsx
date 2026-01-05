@@ -5,8 +5,8 @@ import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import type { DateClickArg } from '@fullcalendar/interaction'
-import type { EventClickArg, EventDropArg, DayCellMountArg, EventDragArg } from '@fullcalendar/core'
+import type { DateClickArg, EventDragStopArg } from '@fullcalendar/interaction'
+import type { EventClickArg, EventDropArg, DayCellMountArg } from '@fullcalendar/core'
 import { useMarketingItems, useUpdateMarketingItem, useMoveCalendarToStandBy } from '@/hooks/use-marketing-items'
 import { toast } from 'sonner'
 import { useChannels } from '@/hooks/use-channels'
@@ -176,7 +176,7 @@ export function CalendarView() {
     }
   }
 
-  const handleEventDragStop = async (info: EventDragArg) => {
+  const handleEventDragStop = async (info: EventDragStopArg) => {
     // Check if dropped on Stand By area
     const standByElement = document.querySelector('[data-droppable="standby"]')
     if (!standByElement) return

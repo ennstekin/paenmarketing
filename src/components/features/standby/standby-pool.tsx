@@ -235,7 +235,7 @@ function StandByCard({ item, creator, onMoveToCalendar, onEdit, onDelete, isMovi
               selected={selectedDate}
               onSelect={handleDateSelect}
               locale={tr}
-              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
             />
           </PopoverContent>
         </Popover>

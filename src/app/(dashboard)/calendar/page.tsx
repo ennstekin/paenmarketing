@@ -82,7 +82,12 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <DragOverlay>
+      <DragOverlay
+        className={undefined}
+        style={undefined}
+        adjustScale={undefined}
+        transition={undefined}
+      >
         {activeItem && <DragOverlayCard item={activeItem} />}
       </DragOverlay>
     </DndContext>
