@@ -6,8 +6,9 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import type { DateClickArg } from '@fullcalendar/interaction'
-import type { EventClickArg, EventDropArg, DayCellMountArg } from '@fullcalendar/core'
-import { useMarketingItems, useUpdateMarketingItem } from '@/hooks/use-marketing-items'
+import type { EventClickArg, EventDropArg, DayCellMountArg, EventDragStopArg } from '@fullcalendar/core'
+import { useMarketingItems, useUpdateMarketingItem, useMoveCalendarToStandBy } from '@/hooks/use-marketing-items'
+import { toast } from 'sonner'
 import { useChannels } from '@/hooks/use-channels'
 import { useUsers } from '@/hooks/use-users'
 import { ItemFormDialog } from '@/components/features/marketing-item/item-form-dialog'
@@ -33,6 +34,7 @@ export function CalendarView() {
   const { data: channels } = useChannels()
   const { data: users } = useUsers()
   const updateItem = useUpdateMarketingItem()
+  const moveToStandBy = useMoveCalendarToStandBy()
   const [selectedItem, setSelectedItem] = useState<MarketingItem | null>(null)
   const [showDialog, setShowDialog] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -174,6 +176,31 @@ export function CalendarView() {
     }
   }
 
+  const handleEventDragStop = async (info: EventDragStopArg) => {
+    // Check if dropped on Stand By area
+    const standByElement = document.querySelector('[data-droppable="standby"]')
+    if (!standByElement) return
+
+    const rect = standByElement.getBoundingClientRect()
+    const { clientX, clientY } = info.jsEvent as MouseEvent
+
+    // Check if drop position is within Stand By area
+    if (
+      clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom
+    ) {
+      const item = info.event.extendedProps.item as MarketingItem
+      try {
+        await moveToStandBy.mutateAsync(item.id)
+        toast.success('İçerik Stand By\'a taşındı')
+      } catch {
+        toast.error('Taşıma başarısız oldu')
+      }
+    }
+  }
+
   if (isLoading) {
     return (
       <Card className="border-0 shadow-lg">
@@ -238,6 +265,8 @@ export function CalendarView() {
             dateClick={handleDateClick}
             editable={true}
             eventDrop={handleEventDrop}
+            eventDragStop={handleEventDragStop}
+            dragRevertDuration={0}
             dayCellDidMount={handleDayCellDidMount}
             height="auto"
             dayMaxEvents={3}

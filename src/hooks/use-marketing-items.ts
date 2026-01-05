@@ -516,3 +516,32 @@ export function useMoveStandByToIdeas() {
     },
   })
 }
+
+// Move Calendar item to Stand By
+export function useMoveCalendarToStandBy() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .update({
+          is_standby: true,
+          scheduled_date: null,
+          scheduled_time: null,
+        } as never)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as MarketingItem
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marketing-items'] })
+      queryClient.invalidateQueries({ queryKey: ['standby-items'] })
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
+    },
+  })
+}

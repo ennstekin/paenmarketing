@@ -78,7 +78,7 @@ export function StandByPool() {
   })
 
   return (
-    <Card ref={setNodeRef} className={cn(isOver && 'ring-2 ring-blue-500 ring-offset-2')}>
+    <Card ref={setNodeRef} data-droppable="standby" className={cn(isOver && 'ring-2 ring-blue-500 ring-offset-2')}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
