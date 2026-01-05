@@ -58,6 +58,7 @@ type UpdateItemInput = {
   assigned_to?: string | null
   assigned_by?: string | null
   is_idea?: boolean
+  is_standby?: boolean
 }
 
 export function useMarketingItems() {
