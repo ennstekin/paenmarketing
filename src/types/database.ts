@@ -145,6 +145,7 @@ export interface Database {
           campaign_id: string | null
           checklist: Json
           is_idea: boolean
+          is_standby: boolean
           created_at: string
           updated_at: string
         }
@@ -170,6 +171,7 @@ export interface Database {
           campaign_id?: string | null
           checklist?: Json
           is_idea?: boolean
+          is_standby?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -195,6 +197,7 @@ export interface Database {
           campaign_id?: string | null
           checklist?: Json
           is_idea?: boolean
+          is_standby?: boolean
           created_at?: string
           updated_at?: string
         }

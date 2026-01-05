@@ -227,6 +227,7 @@ export function CalendarView() {
               right: 'dayGridMonth,timeGridWeek',
             }}
             locale="tr"
+            firstDay={1}
             buttonText={{
               today: 'Bugün',
               month: 'Ay',
