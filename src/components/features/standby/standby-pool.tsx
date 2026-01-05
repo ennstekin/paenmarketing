@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, Plus, Calendar, MoreHorizontal, Trash2, Edit, Loader2 } from 'lucide-react'
+import { useDraggable, useDroppable } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
+import { Clock, Plus, Calendar, MoreHorizontal, Trash2, Edit, Loader2, GripVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -23,6 +25,7 @@ import { useUsers } from '@/hooks/use-users'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 import type { MarketingItem } from '@/types/database'
 
 export function StandByPool() {
@@ -69,13 +72,19 @@ export function StandByPool() {
     return users?.find(u => u.id === userId)
   }
 
+  // Droppable for receiving items from Ideas
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'standby-drop',
+  })
+
   return (
-    <Card>
+    <Card ref={setNodeRef} className={cn(isOver && 'ring-2 ring-blue-500 ring-offset-2')}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Clock className="h-5 w-5 text-blue-500" />
             Stand By
+            {isOver && <span className="text-xs text-blue-500 ml-2">Buraya birak</span>}
           </CardTitle>
           <Button
             variant="outline"
@@ -111,10 +120,13 @@ export function StandByPool() {
             })}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className={cn(
+            "text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg",
+            isOver ? "border-blue-500 bg-blue-50" : "border-transparent"
+          )}>
             <Clock className="h-10 w-10 mx-auto mb-2 opacity-50" />
             <p>Stand By listesi bos</p>
-            <p className="text-sm">Bekleyen icerikleri buraya ekleyin</p>
+            <p className="text-sm">Bekleyen icerikleri buraya ekleyin veya suruleyip birakin</p>
           </div>
         )}
       </CardContent>
@@ -141,6 +153,18 @@ function StandByCard({ item, creator, onMoveToCalendar, onEdit, onDelete, isMovi
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>()
 
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `standby-${item.id}`,
+    data: {
+      type: 'standby',
+      item,
+    },
+  })
+
+  const style = transform ? {
+    transform: CSS.Translate.toString(transform),
+  } : undefined
+
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date)
@@ -150,9 +174,25 @@ function StandByCard({ item, creator, onMoveToCalendar, onEdit, onDelete, isMovi
   }
 
   return (
-    <div className="group relative bg-blue-50/50 rounded-lg p-3 border border-blue-100 hover:border-blue-300 transition-colors">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group relative bg-blue-50/50 rounded-lg p-3 border border-blue-100 hover:border-blue-300 transition-colors",
+        isDragging && "opacity-50 shadow-lg"
+      )}
+    >
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-2 left-2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
       {/* Title */}
-      <h4 className="font-medium text-sm line-clamp-2 pr-6">{item.title}</h4>
+      <h4 className="font-medium text-sm line-clamp-2 pr-6 pl-4">{item.title}</h4>
 
       {/* Description if exists */}
       {item.description && (

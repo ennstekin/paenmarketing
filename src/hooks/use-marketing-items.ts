@@ -462,3 +462,57 @@ export function useDeleteStandByItem() {
     },
   })
 }
+
+// Move Idea to Stand By
+export function useMoveIdeaToStandBy() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .update({
+          is_idea: false,
+          is_standby: true,
+        } as never)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as MarketingItem
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ideas'] })
+      queryClient.invalidateQueries({ queryKey: ['standby-items'] })
+    },
+  })
+}
+
+// Move Stand By to Ideas
+export function useMoveStandByToIdeas() {
+  const queryClient = useQueryClient()
+  const supabase = createClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('marketing_items')
+        .update({
+          is_idea: true,
+          is_standby: false,
+        } as never)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as MarketingItem
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ideas'] })
+      queryClient.invalidateQueries({ queryKey: ['standby-items'] })
+    },
+  })
+}
