@@ -196,6 +196,8 @@ export function useStats() {
       const { data, error } = await supabase
         .from('marketing_items')
         .select('channel, status, scheduled_date')
+        .or('is_idea.is.null,is_idea.eq.false')
+        .or('is_standby.is.null,is_standby.eq.false')
 
       if (error) throw error
 
