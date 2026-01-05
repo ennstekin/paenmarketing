@@ -397,26 +397,14 @@ export function IdeaFormDialog({ open, onOpenChange, idea }: IdeaFormDialogProps
                     control={control}
                     render={({ field }) => (
                       <Select
-                        value={field.value || ''}
-                        onValueChange={(v) => field.onChange(v || null)}
+                        value={field.value || 'unassigned'}
+                        onValueChange={(v) => field.onChange(v === 'unassigned' ? null : v)}
                       >
                         <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Kişi seç...">
-                            {field.value && users?.find(u => u.id === field.value) && (
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-5 w-5">
-                                  <AvatarImage src={users.find(u => u.id === field.value)?.avatar_url || undefined} />
-                                  <AvatarFallback className="text-[10px]">
-                                    {users.find(u => u.id === field.value)?.full_name?.[0] || users.find(u => u.id === field.value)?.email?.[0]}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span>{users.find(u => u.id === field.value)?.full_name || users.find(u => u.id === field.value)?.email}</span>
-                              </div>
-                            )}
-                          </SelectValue>
+                          <SelectValue placeholder="Kişi seç..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Atanmamış</SelectItem>
+                          <SelectItem value="unassigned">Atanmamış</SelectItem>
                           {users?.filter(u => u.is_active !== false).map((user) => (
                             <SelectItem key={user.id} value={user.id}>
                               <div className="flex items-center gap-2">

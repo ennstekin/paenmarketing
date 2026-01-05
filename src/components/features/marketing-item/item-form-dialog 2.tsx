@@ -24,15 +24,11 @@ import { Badge } from '@/components/ui/badge'
 import { useCreateMarketingItem, useUpdateMarketingItem, useDeleteMarketingItem } from '@/hooks/use-marketing-items'
 import { useChannels } from '@/hooks/use-channels'
 import { useAttachments, useUploadAttachment, useDeleteAttachment } from '@/hooks/use-attachments'
-import { useUsers } from '@/hooks/use-users'
 import { PriorityBadge, PrioritySelect } from '@/components/features/priority/priority-badge'
 import { CampaignSelector } from '@/components/features/campaigns/campaign-selector'
 import { ChecklistEditor, ChecklistPreview, type ChecklistItem } from '@/components/features/checklist/checklist-editor'
 import { ContentTypeSelect, ContentTypeBadge } from '@/components/features/content-type/content-type-badge'
 import { DeadlineIndicator } from '@/components/features/deadline/deadline-indicator'
-import { CommentSection } from '@/components/features/comments/comment-section'
-import { ApprovalSection } from '@/components/features/approval/approval-section'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Trash2,
   Loader2,
@@ -51,12 +47,7 @@ import {
   Target,
   ListChecks,
   Folder,
-  MessageSquare,
-  ShieldCheck,
-  User,
 } from 'lucide-react'
-import { useComments } from '@/hooks/use-comments'
-import { useApprovalRequests } from '@/hooks/use-approvals'
 import type { MarketingItem, ChannelType, ItemStatus, Priority, ContentType } from '@/types/database'
 import { statusLabels } from '@/lib/utils'
 
@@ -78,7 +69,6 @@ const formSchema = z.object({
     text: z.string(),
     completed: z.boolean(),
   })).optional(),
-  assigned_to: z.string().nullable().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -120,16 +110,11 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
   const updateItem = useUpdateMarketingItem()
   const deleteItem = useDeleteMarketingItem()
   const { data: channels, isLoading: channelsLoading } = useChannels()
-  const { data: users } = useUsers()
   const { data: attachments } = useAttachments(item?.id)
   const uploadAttachment = useUploadAttachment()
   const deleteAttachment = useDeleteAttachment()
 
-  const [activeTab, setActiveTab] = useState<'details' | 'settings' | 'media' | 'comments' | 'approvals'>('details')
-
-  // Fetch comments and approvals count for badge display
-  const { data: comments } = useComments(item?.id || '')
-  const { data: approvals } = useApprovalRequests(item?.id || '')
+  const [activeTab, setActiveTab] = useState<'details' | 'settings' | 'media'>('details')
   const [isDragging, setIsDragging] = useState(false)
   const isEditing = !!item
 
@@ -165,7 +150,6 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
       deadline: '',
       campaign_id: null,
       checklist: [],
-      assigned_to: null,
     },
   })
 
@@ -192,11 +176,6 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
       // Support both old single channel and new multiple channels
       const itemChannels = (item as MarketingItem & { channels?: string[] }).channels ||
         (item.channel ? [item.channel] : [])
-      // Parse checklist from JSON
-      let parsedChecklist: ChecklistItem[] = []
-      if (item.checklist && Array.isArray(item.checklist)) {
-        parsedChecklist = item.checklist as unknown as ChecklistItem[]
-      }
       reset({
         title: item.title,
         description: item.description || '',
@@ -206,12 +185,6 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
         scheduled_time: item.scheduled_time || '',
         url: (item as MarketingItem & { url?: string }).url || '',
         notes: item.notes || '',
-        priority: item.priority || 'normal',
-        content_type: item.content_type || null,
-        deadline: item.deadline || '',
-        campaign_id: item.campaign_id || null,
-        checklist: parsedChecklist,
-        assigned_to: item.assigned_to || null,
       })
     } else if (channels && channels.length > 0) {
       reset({
@@ -223,12 +196,6 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
         scheduled_time: '',
         url: '',
         notes: '',
-        priority: 'normal',
-        content_type: null,
-        deadline: '',
-        campaign_id: null,
-        checklist: [],
-        assigned_to: null,
       })
     }
     setActiveTab('details')
@@ -245,12 +212,6 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
       scheduled_time: data.scheduled_time || null,
       url: data.url || null,
       notes: data.notes || null,
-      priority: data.priority as Priority,
-      content_type: data.content_type as ContentType | null,
-      deadline: data.deadline || null,
-      campaign_id: data.campaign_id || null,
-      checklist: data.checklist || [],
-      assigned_to: data.assigned_to || null,
     }
 
     if (isEditing && item) {
@@ -318,69 +279,32 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 mt-4 p-1 bg-neutral-100 rounded-lg w-fit">
-            <button
-              type="button"
-              onClick={() => setActiveTab('details')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'details'
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'text-neutral-600 hover:text-neutral-900'
-              }`}
-            >
-              Detaylar
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('settings')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'settings'
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'text-neutral-600 hover:text-neutral-900'
-              }`}
-            >
-              Ayarlar
-            </button>
-            {isEditing && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('media')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === 'media'
-                      ? 'bg-white text-neutral-900 shadow-sm'
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  Medya ({attachments?.length || 0})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('comments')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-                    activeTab === 'comments'
-                      ? 'bg-white text-neutral-900 shadow-sm'
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Yorumlar {comments && comments.length > 0 && `(${comments.length})`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('approvals')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-                    activeTab === 'approvals'
-                      ? 'bg-white text-neutral-900 shadow-sm'
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  Onaylar {approvals && approvals.length > 0 && `(${approvals.length})`}
-                </button>
-              </>
-            )}
-          </div>
+          {isEditing && (
+            <div className="flex gap-1 mt-4 p-1 bg-neutral-100 rounded-lg w-fit">
+              <button
+                type="button"
+                onClick={() => setActiveTab('details')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'details'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Detaylar
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('media')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'media'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Medya ({attachments?.length || 0})
+              </button>
+            </div>
+          )}
         </DialogHeader>
 
         {/* Content */}
@@ -575,165 +499,12 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                           {statusLabels[watchedStatus] || ''}
                         </Badge>
                       )}
-                      {watchedPriority && watchedPriority !== 'normal' && (
-                        <PriorityBadge priority={watchedPriority} size="sm" />
-                      )}
-                      {watchedContentType && (
-                        <ContentTypeBadge contentType={watchedContentType} size="sm" />
-                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </form>
-          ) : activeTab === 'settings' ? (
-            /* Settings Tab */
-            <form id="item-form" onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - Priority, Content Type, Campaign */}
-                <div className="space-y-5">
-                  {/* Priority */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <Flag className="h-4 w-4 text-neutral-400" />
-                      Öncelik
-                    </label>
-                    <Controller
-                      name="priority"
-                      control={control}
-                      render={({ field }) => (
-                        <PrioritySelect
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  {/* Content Type */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <Target className="h-4 w-4 text-neutral-400" />
-                      İçerik Tipi
-                    </label>
-                    <Controller
-                      name="content_type"
-                      control={control}
-                      render={({ field }) => (
-                        <ContentTypeSelect
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  {/* Campaign */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <Folder className="h-4 w-4 text-neutral-400" />
-                      Kampanya
-                    </label>
-                    <Controller
-                      name="campaign_id"
-                      control={control}
-                      render={({ field }) => (
-                        <CampaignSelector
-                          value={field.value}
-                          onChange={field.onChange}
-                          className="w-full"
-                        />
-                      )}
-                    />
-                  </div>
-
-                  {/* Deadline */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-neutral-400" />
-                      Son Teslim Tarihi
-                    </label>
-                    <Input
-                      type="date"
-                      {...register('deadline')}
-                      className="h-11"
-                    />
-                  </div>
-
-                  {/* Assigned To */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-                      <User className="h-4 w-4 text-neutral-400" />
-                      Sorumlu Kişi
-                    </label>
-                    <Controller
-                      name="assigned_to"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          value={field.value || 'unassigned'}
-                          onValueChange={(v) => field.onChange(v === 'unassigned' ? null : v)}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Kişi seç..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unassigned">Atanmamış</SelectItem>
-                            {users?.filter(u => u.is_active !== false).map((user) => (
-                              <SelectItem key={user.id} value={user.id}>
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage src={user.avatar_url || undefined} />
-                                    <AvatarFallback className="text-[10px]">
-                                      {user.full_name?.[0] || user.email?.[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span>{user.full_name || user.email}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Right Column - Checklist */}
-                <div className="space-y-5">
-                  <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100 space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-medium text-neutral-700">
-                      <ListChecks className="h-4 w-4" />
-                      Kontrol Listesi
-                    </div>
-                    <Controller
-                      name="checklist"
-                      control={control}
-                      render={({ field }) => (
-                        <ChecklistEditor
-                          items={field.value || []}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  {/* Quick file upload for new items */}
-                  {!isEditing && (
-                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                      <div className="flex items-center gap-2 text-sm font-medium text-blue-700 mb-2">
-                        <Upload className="h-4 w-4" />
-                        Dosya Ekle
-                      </div>
-                      <p className="text-xs text-blue-600">
-                        İçeriği kaydettikten sonra Medya sekmesinden dosya yükleyebilirsiniz.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </form>
-          ) : activeTab === 'media' ? (
+          ) : (
             /* Media Tab */
             <div className="space-y-4">
               {/* Upload Area */}
@@ -847,31 +618,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                 </div>
               )}
             </div>
-          ) : activeTab === 'comments' ? (
-            /* Comments Tab */
-            <div className="space-y-4">
-              {item?.id ? (
-                <CommentSection marketingItemId={item.id} />
-              ) : (
-                <div className="text-center py-8 text-neutral-400">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Yorum eklemek için önce içeriği kaydedin</p>
-                </div>
-              )}
-            </div>
-          ) : activeTab === 'approvals' ? (
-            /* Approvals Tab */
-            <div className="space-y-4">
-              {item?.id ? (
-                <ApprovalSection marketingItemId={item.id} />
-              ) : (
-                <div className="text-center py-8 text-neutral-400">
-                  <ShieldCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Onay isteği göndermek için önce içeriği kaydedin</p>
-                </div>
-              )}
-            </div>
-          ) : null}
+          )}
         </div>
 
         {/* Footer */}
