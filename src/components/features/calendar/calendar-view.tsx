@@ -6,7 +6,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import type { DateClickArg } from '@fullcalendar/interaction'
-import type { EventClickArg, EventDropArg, DayCellMountArg, EventDragStopArg } from '@fullcalendar/core'
+import type { EventClickArg, EventDropArg, DayCellMountArg } from '@fullcalendar/core'
 import { useMarketingItems, useUpdateMarketingItem, useMoveCalendarToStandBy } from '@/hooks/use-marketing-items'
 import { toast } from 'sonner'
 import { useChannels } from '@/hooks/use-channels'
@@ -176,13 +176,13 @@ export function CalendarView() {
     }
   }
 
-  const handleEventDragStop = async (info: EventDragStopArg) => {
+  const handleEventDragStop = async (info: { event: { extendedProps: { item: MarketingItem } }; jsEvent: MouseEvent }) => {
     // Check if dropped on Stand By area
     const standByElement = document.querySelector('[data-droppable="standby"]')
     if (!standByElement) return
 
     const rect = standByElement.getBoundingClientRect()
-    const { clientX, clientY } = info.jsEvent as MouseEvent
+    const { clientX, clientY } = info.jsEvent
 
     // Check if drop position is within Stand By area
     if (
