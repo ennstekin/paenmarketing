@@ -895,8 +895,8 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
               İptal
             </Button>
             <Button
-              type="submit"
-              form="item-form"
+              type="button"
+              onClick={handleSubmit(onSubmit)}
               disabled={createItem.isPending || updateItem.isPending}
             >
               {createItem.isPending || updateItem.isPending ? (
