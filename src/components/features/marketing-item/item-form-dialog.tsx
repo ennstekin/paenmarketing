@@ -384,10 +384,9 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
         </DialogHeader>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <form id="item-form" onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5">
           {activeTab === 'details' ? (
-            <form id="item-form" onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column - Main Content */}
                 <div className="space-y-5">
                   {/* Title */}
@@ -585,11 +584,9 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                   </div>
                 </div>
               </div>
-            </form>
           ) : activeTab === 'settings' ? (
             /* Settings Tab */
-            <form id="item-form" onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column - Priority, Content Type, Campaign */}
                 <div className="space-y-5">
                   {/* Priority */}
@@ -732,7 +729,6 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                   )}
                 </div>
               </div>
-            </form>
           ) : activeTab === 'media' ? (
             /* Media Tab */
             <div className="space-y-4">
@@ -872,7 +868,7 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
               )}
             </div>
           ) : null}
-        </div>
+        </form>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t bg-neutral-50 flex items-center justify-between">
