@@ -294,7 +294,7 @@ export function CalendarView() {
                       {arg.event.title}
                     </span>
                   </div>
-                  {/* Channel Tags + Status */}
+                  {/* Channel Tags + Status + Tags */}
                   <div className="flex flex-wrap gap-1">
                     {itemChannels.map((channelName, i) => (
                       <span
@@ -308,6 +308,24 @@ export function CalendarView() {
                         {channelMap[channelName]?.label || channelName}
                       </span>
                     ))}
+                    {item.tags && item.tags.length > 0 && item.tags.slice(0, 2).map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                        style={{
+                          backgroundColor: `${tag.color}30`,
+                          color: tag.color,
+                          border: `1px solid ${tag.color}50`,
+                        }}
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                    {item.tags && item.tags.length > 2 && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-600 text-white">
+                        +{item.tags.length - 2}
+                      </span>
+                    )}
                     {item.status === 'completed' && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500 text-white">
                         Yayınlandı

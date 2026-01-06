@@ -426,7 +426,9 @@ export type InsertTables<T extends keyof Database['public']['Tables']> =
 export type UpdateTables<T extends keyof Database['public']['Tables']> =
   Database['public']['Tables'][T]['Update']
 
-export type MarketingItem = Tables<'marketing_items'>
+export type MarketingItem = Tables<'marketing_items'> & {
+  tags?: Tag[]
+}
 export type Profile = Tables<'profiles'>
 export type Attachment = Tables<'attachments'>
 export type Tag = Tables<'tags'>

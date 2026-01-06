@@ -69,13 +69,23 @@ export function useMarketingItems() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('marketing_items')
-        .select('*')
+        .select('*, item_tags(tag_id, tags(*))')
         .or('is_idea.is.null,is_idea.eq.false')
         .order('scheduled_date', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return data as MarketingItem[]
+
+      // Transform to include tags array
+      type ItemWithTags = MarketingItem & {
+        item_tags?: { tag_id: string; tags: { id: string; user_id: string; name: string; color: string; created_at: string } }[]
+      }
+
+      return (data as ItemWithTags[]).map(item => ({
+        ...item,
+        tags: item.item_tags?.map(it => it.tags) || [],
+        item_tags: undefined, // Remove the raw join data
+      })) as MarketingItem[]
     },
   })
 }

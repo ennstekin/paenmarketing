@@ -54,9 +54,12 @@ import {
   MessageSquare,
   ShieldCheck,
   User,
+  Tag,
 } from 'lucide-react'
 import { useComments } from '@/hooks/use-comments'
 import { useApprovalRequests } from '@/hooks/use-approvals'
+import { useItemTags, useAddItemTags } from '@/hooks/use-tags'
+import { TagSelector, TagsDisplay } from '@/components/features/tags/tag-selector'
 import type { MarketingItem, ChannelType, ItemStatus, Priority, ContentType } from '@/types/database'
 import { statusLabels } from '@/lib/utils'
 
@@ -130,6 +133,9 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
   // Fetch comments and approvals count for badge display
   const { data: comments } = useComments(item?.id || '')
   const { data: approvals } = useApprovalRequests(item?.id || '')
+  const { data: itemTags } = useItemTags(item?.id)
+  const addItemTags = useAddItemTags()
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const isEditing = !!item
 
@@ -232,7 +238,16 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
       })
     }
     setActiveTab('details')
+    // Reset tag selection
+    setSelectedTagIds([])
   }, [item, reset, channels, open, defaultDate])
+
+  // Sync selectedTagIds when itemTags loads
+  useEffect(() => {
+    if (itemTags) {
+      setSelectedTagIds(itemTags.map(t => t.id))
+    }
+  }, [itemTags])
 
   const onSubmit = async (data: FormData) => {
     const payload = {
@@ -253,10 +268,22 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
       assigned_to: data.assigned_to || null,
     }
 
+    let itemId: string
+
     if (isEditing && item) {
       await updateItem.mutateAsync({ id: item.id, ...payload })
+      itemId = item.id
     } else {
-      await createItem.mutateAsync(payload)
+      const newItem = await createItem.mutateAsync(payload)
+      itemId = newItem.id
+    }
+
+    // Save tags
+    if (selectedTagIds.length > 0 || (isEditing && itemTags && itemTags.length > 0)) {
+      await addItemTags.mutateAsync({
+        marketingItemId: itemId,
+        tagIds: selectedTagIds,
+      })
     }
 
     onOpenChange(false)
@@ -692,6 +719,18 @@ export function ItemFormDialog({ open, onOpenChange, item, defaultDate }: ItemFo
                           </SelectContent>
                         </Select>
                       )}
+                    />
+                  </div>
+
+                  {/* Tags */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-neutral-400" />
+                      Etiketler
+                    </label>
+                    <TagSelector
+                      selectedTagIds={selectedTagIds}
+                      onChange={setSelectedTagIds}
                     />
                   </div>
                 </div>
